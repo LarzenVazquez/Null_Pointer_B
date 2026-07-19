@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// USUARIOS
+// ==========================================
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  email        String   @unique
+  telefono     String?
+  passwordHash String   @map("password_hash")
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  roles    UsuarioRol[]
+  sesiones Sesion[]
+
+  @@map("usuarios")
+}
+
+// ==========================================
+// ROLES  (Administrador, Editor, Usuario)
+// ==========================================
+model Rol {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  descripcion String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  usuarios UsuarioRol[]
+  permisos RolPermiso[]
+
+  @@map("roles")
+}
+
+// ==========================================
+// PERMISOS  (ej: usuarios.crear, salas.editar, reservas.ver)
+// ==========================================
+model Permiso {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  descripcion String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolPermiso[]
+
+  @@map("permisos")
+}
+
+// ==========================================
+// TABLA INTERMEDIA: usuario <-> rol (N:M)
+// ==========================================
+model UsuarioRol {
+  usuarioId Int @map("usuario_id")
+  rolId     Int @map("rol_id")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rol     Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  asignadoEn DateTime @default(now()) @map("asignado_en")
+
+  @@id([usuarioId, rolId])
+  @@map("usuario_rol")
+}
+
+// ==========================================
+// TABLA INTERMEDIA: rol <-> permiso (N:M)
+// ==========================================
+model RolPermiso {
+  rolId     Int @map("rol_id")
+  permisoId Int @map("permiso_id")
+
+  rol     Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@id([rolId, permisoId])
+  @@map("rol_permiso")
+}
+
+// ==========================================
+// SESIONES (refresh tokens) -> para poder
+// invalidar sesiones al hacer logout y
+// validar que un token siga "vivo"
+// ==========================================
+model Sesion {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int      @map("usuario_id")
+  refreshToken String   @unique @map("refresh_token")
+  userAgent    String?  @map("user_agent")
+  ip           String?
+  valida       Boolean  @default(true)
+  expiraEn     DateTime @map("expira_en")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("sesiones")
+}
