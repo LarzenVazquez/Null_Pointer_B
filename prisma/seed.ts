@@ -108,33 +108,46 @@ async function main() {
     });
   }
 
-  console.log("Creando usuario administrador por defecto...");
+  console.log("Creando usuarios iniciales...");
 
-  const passwordHash = await bcrypt.hash("Admin123!", 10);
-
-  const admin = await prisma.usuario.upsert({
-    where: { email: "[email protected]" },
-    update: {},
-    create: {
-      nombre: "Administrador",
-      email: "[email protected]",
-      passwordHash,
+  const usuariosIniciales = [
+    {
+      email: "admin@nullpointer.mx",
+      password: "admin123",
+      rol: "Administrador",
     },
-  });
+    { email: "editor@nullpointer.mx", password: "aditor123", rol: "Editor" },
+    { email: "cliente@nullpointer.mx", password: "cliente123", rol: "Usuario" },
+  ];
 
-  await prisma.usuarioRol.upsert({
-    where: {
-      usuarioId_rolId: {
-        usuarioId: admin.id,
-        rolId: rolesCreados["Administrador"].id,
+  for (const u of usuariosIniciales) {
+    const passwordHash = await bcrypt.hash(u.password, 10);
+
+    const usuario = await prisma.usuario.upsert({
+      where: { email: u.email },
+      update: { passwordHash },
+      create: {
+        nombre: u.email.split("@")[0],
+        email: u.email,
+        passwordHash,
       },
-    },
-    update: {},
-    create: {
-      usuarioId: admin.id,
-      rolId: rolesCreados["Administrador"].id,
-    },
-  });
+    });
+
+    await prisma.usuarioRol.upsert({
+      where: {
+        usuarioId_rolId: {
+          usuarioId: usuario.id,
+          rolId: rolesCreados[u.rol].id,
+        },
+      },
+      update: {},
+      create: {
+        usuarioId: usuario.id,
+        rolId: rolesCreados[u.rol].id,
+      },
+    });
+    console.log(`Usuario ${u.email} creado con rol ${u.rol}.`);
+  }
 
   console.log("Seed completado.");
   console.log("Usuario admin -> email: [email protected]  password: Admin123!");

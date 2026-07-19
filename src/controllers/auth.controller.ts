@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import bcrypt from "bcrypt";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
@@ -25,7 +26,23 @@ function clearRefreshCookie(res: Response) {
 }
 
 export const registro = asyncHandler(async (req: Request, res: Response) => {
-  const usuario = await authService.registrarUsuario(req.body);
+  const { password, ...datosUsuario } = req.body;
+
+  if (!password) {
+    throw new ApiError(400, "La contraseña es requerida para el registro");
+  }
+
+  // Encriptar la contraseña con un factor de costo de 10
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  // Reconstruir el objeto con la contraseña encriptada
+  const datosParaGuardar = {
+    ...datosUsuario,
+    password: passwordHash,
+  };
+
+  const usuario = await authService.registrarUsuario(datosParaGuardar);
+
   res.status(201).json({
     ok: true,
     mensaje: "Usuario registrado correctamente. Ahora puedes iniciar sesión.",
@@ -104,10 +121,8 @@ export const actualizarPerfil = asyncHandler(
     if (!req.usuario) throw ApiError.noAutorizado();
     const usuario = await authService.actualizarPerfilPropio(
       req.usuario.id,
-      req.body
+      req.body,
     );
-    res
-      .status(200)
-      .json({ ok: true, mensaje: "Perfil actualizado", usuario });
-  }
+    res.status(200).json({ ok: true, mensaje: "Perfil actualizado", usuario });
+  },
 );

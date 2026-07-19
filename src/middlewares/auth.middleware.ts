@@ -13,11 +13,7 @@ import { verificarAccessToken } from "../utils/jwt.utils";
  * un link directo, etc.), si no hay un token válido, la petición nunca
  * llega al controller -> se corta aquí con 401.
  */
-export function requireAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-) {
+export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith("Bearer ")) {
@@ -51,11 +47,7 @@ export function requireAuth(
  * req.usuario si el token es válido. Útil para endpoints públicos que
  * cambian ligeramente su respuesta si el usuario está autenticado.
  */
-export function optionalAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-) {
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) return next();
 
