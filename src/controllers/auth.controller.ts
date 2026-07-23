@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
@@ -26,22 +25,12 @@ function clearRefreshCookie(res: Response) {
 }
 
 export const registro = asyncHandler(async (req: Request, res: Response) => {
-  const { password, ...datosUsuario } = req.body;
-
-  if (!password) {
-    throw new ApiError(400, "La contraseña es requerida para el registro");
-  }
-
-  // Encriptar la contraseña con un factor de costo de 10
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  // Reconstruir el objeto con la contraseña encriptada
-  const datosParaGuardar = {
-    ...datosUsuario,
-    password: passwordHash,
-  };
-
-  const usuario = await authService.registrarUsuario(datosParaGuardar);
+  // El cifrado de la contraseña (bcrypt) se hace UNA sola vez, dentro de
+  // authService.registrarUsuario. Aquí solo se reenvía la contraseña en
+  // texto plano recibida del formulario: si se hashea también en este
+  // controller, el service la volvería a hashear (hash de un hash) y
+  // el usuario jamás podría volver a iniciar sesión con su contraseña real.
+  const usuario = await authService.registrarUsuario(req.body);
 
   res.status(201).json({
     ok: true,

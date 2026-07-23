@@ -113,11 +113,15 @@ async function main() {
   const usuariosIniciales = [
     {
       email: "admin@nullpointer.mx",
-      password: "admin123",
+      password: "Admin123!",
       rol: "Administrador",
     },
-    { email: "editor@nullpointer.mx", password: "aditor123", rol: "Editor" },
-    { email: "cliente@nullpointer.mx", password: "cliente123", rol: "Usuario" },
+    { email: "editor@nullpointer.mx", password: "Editor123!", rol: "Editor" },
+    {
+      email: "cliente@nullpointer.mx",
+      password: "Cliente123!",
+      rol: "Usuario",
+    },
   ];
 
   for (const u of usuariosIniciales) {
@@ -150,7 +154,10 @@ async function main() {
   }
 
   console.log("Seed completado.");
-  console.log("Usuario admin -> email: [email protected]  password: Admin123!");
+  console.log("Credenciales de prueba:");
+  for (const u of usuariosIniciales) {
+    console.log(`  ${u.rol.padEnd(13)} -> ${u.email}  /  ${u.password}`);
+  }
 }
 
 main()
