@@ -10,10 +10,10 @@ import {
 } from "../middlewares/rateLimit.middleware";
 
 const cookieOptions = {
-  httpOnly: true, // inaccesible desde JS del navegador -> mitiga robo por XSS
-  secure: env.isProduction, // solo por HTTPS en producción
-  sameSite: "lax" as const, // mitiga CSRF en la mayoría de los casos
-  path: "/api/auth", // solo se envía a rutas de auth (refresh/logout)
+  httpOnly: true,
+  secure: env.isProduction,
+  sameSite: "lax" as const,
+  path: "/api/auth",
   maxAge: env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
 };
 
