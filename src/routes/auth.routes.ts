@@ -3,6 +3,7 @@ import * as authController from "../controllers/auth.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { loginRateLimiter } from "../middlewares/rateLimit.middleware";
+import { descifrarLogin } from "../middlewares/hybridDecrypt.middleware";
 import {
   actualizarPerfilPropioSchema,
   loginSchema,
@@ -11,13 +12,19 @@ import {
 
 const router = Router();
 
+// Llave pública para el cifrado híbrido del login (ver
+// src/utils/hybridCrypto.utils.ts). Debe pedirse ANTES de cada intento
+// de login; no requiere sesión.
+router.get("/public-key", authController.publicKey);
+
 router.post("/registro", validate(registroSchema), authController.registro);
 
 router.post(
   "/login",
   loginRateLimiter,
+  descifrarLogin,
   validate(loginSchema),
-  authController.login
+  authController.login,
 );
 
 router.post("/refresh", authController.refresh);
@@ -29,7 +36,7 @@ router.put(
   "/perfil",
   requireAuth,
   validate(actualizarPerfilPropioSchema),
-  authController.actualizarPerfil
+  authController.actualizarPerfil,
 );
 router.post("/logout-todos", requireAuth, authController.logoutTodos);
 

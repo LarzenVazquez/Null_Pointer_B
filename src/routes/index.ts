@@ -1,8 +1,10 @@
 import { Router } from "express";
+
 import authRoutes from "./auth.routes";
 import usuariosRoutes from "./usuarios.routes";
 import eventosRoutes from "./eventos.routes";
 import modulosRoutes from "./modulos.routes";
+import searchRoutes from "./search.routes";
 
 const router = Router();
 
@@ -15,6 +17,7 @@ router.get("/", (_req, res) => {
       usuarios: "/api/usuarios",
       eventos: "/api/eventos",
       modulos: "/api/modulos",
+      admin: "/api/admin (solo Administrador)",
     },
   });
 });
@@ -23,5 +26,6 @@ router.use("/auth", authRoutes);
 router.use("/usuarios", usuariosRoutes);
 router.use("/eventos", eventosRoutes);
 router.use("/modulos", modulosRoutes);
+router.use("/admin", searchRoutes);
 
 export default router;

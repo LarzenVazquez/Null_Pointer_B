@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma";
 import { env } from "../config/env";
 import { ApiError } from "../utils/ApiError";
+import { indexUsuario, removeUsuarioDelIndice } from "./search.service";
 
 function serializar(usuario: any) {
   return {
@@ -53,7 +54,7 @@ export async function crearUsuarioComoAdmin(datos: {
 
   const passwordHash = await bcrypt.hash(
     datos.password,
-    env.BCRYPT_SALT_ROUNDS
+    env.BCRYPT_SALT_ROUNDS,
   );
 
   const usuario = await prisma.usuario.create({
@@ -67,12 +68,14 @@ export async function crearUsuarioComoAdmin(datos: {
     include: includeRoles,
   });
 
-  return serializar(usuario);
+  const usuarioSerializado = serializar(usuario);
+  await indexUsuario(usuarioSerializado);
+  return usuarioSerializado;
 }
 
 export async function actualizarUsuario(
   id: number,
-  cambios: { nombre?: string; telefono?: string; activo?: boolean }
+  cambios: { nombre?: string; telefono?: string; activo?: boolean },
 ) {
   await asegurarExiste(id);
   const usuario = await prisma.usuario.update({
@@ -80,22 +83,20 @@ export async function actualizarUsuario(
     data: cambios,
     include: includeRoles,
   });
-  return serializar(usuario);
+  const usuarioSerializado = serializar(usuario);
+  await indexUsuario(usuarioSerializado);
+  return usuarioSerializado;
 }
 
 export async function eliminarUsuario(id: number) {
   await asegurarExiste(id);
   await prisma.usuario.delete({ where: { id } });
+  await removeUsuarioDelIndice(id);
 }
 
-/**
- * Cambia el rol de un usuario. Un usuario en este esquema puede tener
- * varios roles (tabla N:M), pero para esta práctica se maneja como
- * "un rol activo a la vez": se reemplaza cualquier rol previo.
- */
 export async function cambiarRolUsuario(
   id: number,
-  nombreRol: "Administrador" | "Editor" | "Usuario"
+  nombreRol: "Administrador" | "Editor" | "Usuario",
 ) {
   await asegurarExiste(id);
 
@@ -111,7 +112,31 @@ export async function cambiarRolUsuario(
     where: { id },
     include: includeRoles,
   });
-  return serializar(usuario);
+
+  // Garantizamos que usuario no sea nulo antes de serializar (satisfacer a TS)
+  if (!usuario)
+    throw ApiError.noEncontrado("Usuario no encontrado tras la actualización");
+
+  const usuarioSerializado = serializar(usuario);
+  await indexUsuario(usuarioSerializado);
+  return usuarioSerializado;
+}
+
+export async function cambiarEstadoUsuario(
+  id: number,
+  activo: boolean | number,
+) {
+  await asegurarExiste(id);
+
+  const usuario = await prisma.usuario.update({
+    where: { id },
+    data: { activo: Boolean(activo) },
+    include: includeRoles,
+  });
+
+  const usuarioSerializado = serializar(usuario);
+  await indexUsuario(usuarioSerializado);
+  return usuarioSerializado;
 }
 
 async function asegurarExiste(id: number) {

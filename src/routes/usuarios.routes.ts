@@ -12,29 +12,23 @@ import {
 
 const router = Router();
 
-// TODA esta sección requiere estar autenticado. Sin esto, cualquier
-// intento de acceder directamente a /api/usuarios (por URL, Postman, etc.)
-// se corta de inmediato con 401, sin importar el rol.
+// TODA esta sección requiere estar autenticado.
 router.use(requireAuth);
 
-router.get(
-  "/",
-  requirePermission(["usuarios.ver"]),
-  usuariosController.listar
-);
+router.get("/", requirePermission(["usuarios.ver"]), usuariosController.listar);
 
 router.get(
   "/:id",
   validate(idParamSchema, "params"),
   requirePermission(["usuarios.ver"]),
-  usuariosController.obtenerUno
+  usuariosController.obtenerUno,
 );
 
 router.post(
   "/",
   requirePermission(["usuarios.crear"]),
   validate(crearUsuarioAdminSchema),
-  usuariosController.crear
+  usuariosController.crear,
 );
 
 router.put(
@@ -42,24 +36,30 @@ router.put(
   validate(idParamSchema, "params"),
   requirePermission(["usuarios.editar"]),
   validate(actualizarUsuarioSchema),
-  usuariosController.actualizar
+  usuariosController.actualizar,
 );
 
 router.delete(
   "/:id",
   validate(idParamSchema, "params"),
   requirePermission(["usuarios.eliminar"]),
-  usuariosController.eliminar
+  usuariosController.eliminar,
 );
 
-// Cambiar el rol de un usuario es una operación sensible: solo Administrador,
-// sin importar los permisos granulares que tenga el que hace la petición.
 router.patch(
   "/:id/rol",
   validate(idParamSchema, "params"),
   requireRole("Administrador"),
   validate(cambiarRolSchema),
-  usuariosController.cambiarRol
+  usuariosController.cambiarRol,
+);
+
+// NUEVA RUTA: Cambiar estado (Baja Lógica)
+router.patch(
+  "/:id/estado",
+  validate(idParamSchema, "params"),
+  requireRole("Administrador"),
+  usuariosController.cambiarEstado,
 );
 
 export default router;

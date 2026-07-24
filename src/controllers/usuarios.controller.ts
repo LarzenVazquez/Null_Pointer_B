@@ -35,3 +35,18 @@ export const cambiarRol = asyncHandler(async (req: Request, res: Response) => {
   const usuario = await usuariosService.cambiarRolUsuario(id, req.body.rol);
   res.status(200).json({ ok: true, usuario });
 });
+
+export const cambiarEstado = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params as unknown as { id: number };
+    const { activo } = req.body; // Se espera que venga como booleano, 1 o 0 desde el frontend
+
+    const usuario = await usuariosService.cambiarEstadoUsuario(id, activo);
+
+    res.status(200).json({
+      ok: true,
+      mensaje: `Usuario ${usuario.activo ? "activado" : "dado de baja"} con éxito`,
+      usuario,
+    });
+  },
+);

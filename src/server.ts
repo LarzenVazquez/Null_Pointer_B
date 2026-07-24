@@ -1,11 +1,20 @@
 import { app } from "./app";
 import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
+import { asegurarIndices } from "./lib/elasticsearch";
 
 async function main() {
-  // Verifica la conexión a PostgreSQL antes de aceptar tráfico.
   await prisma.$connect();
   console.log("[db] Conexión a PostgreSQL establecida");
+  try {
+    await asegurarIndices();
+    console.log("[search] Índices de Elasticsearch listos");
+  } catch (err) {
+    console.warn(
+      "[search] No se pudo conectar a Elasticsearch. El buscador global no funcionará hasta que esté disponible.",
+      err,
+    );
+  }
 
   const servidor = app.listen(env.PORT, () => {
     console.log(`[server] Escuchando en http://localhost:${env.PORT}`);
@@ -13,7 +22,6 @@ async function main() {
     console.log(`[server] CORS habilitado para: ${env.FRONTEND_URL}`);
   });
 
-  // Apagado ordenado (cierra conexiones antes de terminar el proceso).
   const apagar = async (señal: string) => {
     console.log(`\n[server] Señal ${señal} recibida, cerrando...`);
     servidor.close(async () => {

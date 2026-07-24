@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
 import * as authService from "../services/auth.service";
+import { getPublicKeyPem } from "../utils/hybridCrypto.utils";
 import {
   limpiarIntentosLogin,
   registrarLoginFallido,
@@ -23,6 +24,13 @@ function setRefreshCookie(res: Response, token: string) {
 function clearRefreshCookie(res: Response) {
   res.clearCookie(env.REFRESH_COOKIE_NAME, { ...cookieOptions, maxAge: 0 });
 }
+
+// Llave pública RSA vigente para que el frontend cifre el login
+// (ver src/utils/hybridCrypto.utils.ts). No requiere autenticación:
+// se necesita ANTES de poder iniciar sesión.
+export const publicKey = asyncHandler(async (_req: Request, res: Response) => {
+  res.status(200).json({ ok: true, publicKey: getPublicKeyPem() });
+});
 
 export const registro = asyncHandler(async (req: Request, res: Response) => {
   // El cifrado de la contraseña (bcrypt) se hace UNA sola vez, dentro de

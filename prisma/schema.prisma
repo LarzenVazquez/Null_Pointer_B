@@ -6,16 +6,13 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==========================================
-// USUARIOS
-// ==========================================
 model Usuario {
   id           Int      @id @default(autoincrement())
   nombre       String
   email        String   @unique
   telefono     String?
   passwordHash String   @map("password_hash")
-  activo       Boolean  @default(true)
+  activo       Boolean  @default(true) // true = 1, false = 0
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -25,9 +22,6 @@ model Usuario {
   @@map("usuarios")
 }
 
-// ==========================================
-// ROLES  (Administrador, Editor, Usuario)
-// ==========================================
 model Rol {
   id          Int      @id @default(autoincrement())
   nombre      String   @unique
@@ -40,9 +34,6 @@ model Rol {
   @@map("roles")
 }
 
-// ==========================================
-// PERMISOS  (ej: usuarios.crear, salas.editar, reservas.ver)
-// ==========================================
 model Permiso {
   id          Int      @id @default(autoincrement())
   nombre      String   @unique
@@ -54,9 +45,6 @@ model Permiso {
   @@map("permisos")
 }
 
-// ==========================================
-// TABLA INTERMEDIA: usuario <-> rol (N:M)
-// ==========================================
 model UsuarioRol {
   usuarioId Int @map("usuario_id")
   rolId     Int @map("rol_id")
@@ -70,9 +58,6 @@ model UsuarioRol {
   @@map("usuario_rol")
 }
 
-// ==========================================
-// TABLA INTERMEDIA: rol <-> permiso (N:M)
-// ==========================================
 model RolPermiso {
   rolId     Int @map("rol_id")
   permisoId Int @map("permiso_id")
@@ -84,11 +69,6 @@ model RolPermiso {
   @@map("rol_permiso")
 }
 
-// ==========================================
-// SESIONES (refresh tokens) -> para poder
-// invalidar sesiones al hacer logout y
-// validar que un token siga "vivo"
-// ==========================================
 model Sesion {
   id           Int      @id @default(autoincrement())
   usuarioId    Int      @map("usuario_id")
