@@ -89,7 +89,6 @@ async function main() {
     });
   }
 
-  // Usuario: solo lectura y crear su propia reserva
   const permisosUsuario = ["salas.ver", "reservas.ver", "reservas.crear"];
 
   for (const nombrePermiso of permisosUsuario) {

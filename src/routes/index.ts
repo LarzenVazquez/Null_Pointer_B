@@ -5,6 +5,7 @@ import usuariosRoutes from "./usuarios.routes";
 import eventosRoutes from "./eventos.routes";
 import modulosRoutes from "./modulos.routes";
 import searchRoutes from "./search.routes";
+import mensajesRoutes from "./mensajes.routes";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.get("/", (_req, res) => {
       usuarios: "/api/usuarios",
       eventos: "/api/eventos",
       modulos: "/api/modulos",
+      mensajes: "/api/mensajes (crear: público, listar/gestionar: Administrador/Editor)",
       admin: "/api/admin (solo Administrador)",
     },
   });
@@ -26,6 +28,7 @@ router.use("/auth", authRoutes);
 router.use("/usuarios", usuariosRoutes);
 router.use("/eventos", eventosRoutes);
 router.use("/modulos", modulosRoutes);
+router.use("/mensajes", mensajesRoutes);
 router.use("/admin", searchRoutes);
 
 export default router;
