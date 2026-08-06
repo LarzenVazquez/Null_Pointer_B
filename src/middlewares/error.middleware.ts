@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import multer from "multer";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
 
@@ -33,6 +34,14 @@ export function errorHandler(
       mensaje: err.message,
       detalles: err.detalles,
     });
+  }
+
+  if (err instanceof multer.MulterError) {
+    const mensaje =
+      err.code === "LIMIT_FILE_SIZE"
+        ? `La imagen supera el tamaño máximo permitido (${env.MAX_IMAGE_SIZE_MB}MB).`
+        : `Error al subir el archivo: ${err.message}`;
+    return res.status(400).json({ ok: false, mensaje });
   }
 
   if (esErrorPrismaConocido(err)) {

@@ -112,6 +112,10 @@ async function main() {
 
   console.log("Creando salas iniciales...");
 
+  // El campo `imagenUrl` guarda la ruta/link de la imagen de la sala.
+  // Puede ser un link externo (como aquí, para el seed inicial) o una ruta
+  // relativa gestionada por el backend, p. ej. "/uploads/salas/archivo.jpg",
+  // que se genera automáticamente al subir un archivo desde el panel admin.
   const salasIniciales = [
     {
       id: "A",
@@ -130,6 +134,7 @@ async function main() {
         "Cabina de control",
         "Marshall DSL40CR + Ampeg BA-210",
       ],
+      imagenUrl: "https://images.pexels.com/photos/5711950/pexels-photo-5711950.jpeg",
     },
     {
       id: "B",
@@ -148,6 +153,7 @@ async function main() {
         "PA JBL profesional",
         "Amplificadores Marshall + Ampeg",
       ],
+      imagenUrl: "https://images.pexels.com/photos/33188274/pexels-photo-33188274.jpeg",
     },
     {
       id: "C",
@@ -166,6 +172,7 @@ async function main() {
         "Monitor de retorno",
         "Ideal para grupos de hasta 3",
       ],
+      imagenUrl: "https://images.pexels.com/photos/8197270/pexels-photo-8197270.jpeg",
     },
   ];
 

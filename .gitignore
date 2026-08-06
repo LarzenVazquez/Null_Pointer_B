@@ -2,3 +2,7 @@ node_modules/
 dist/
 .env
 *.log
+
+# Archivos subidos por usuarios (imágenes de salas, etc.) — no se versionan.
+# El directorio se crea automáticamente al iniciar el servidor.
+uploads/

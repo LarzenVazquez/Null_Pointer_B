@@ -15,6 +15,11 @@ export const env = {
   PORT: Number(process.env.PORT ?? 3000),
   DATABASE_URL: requerido("DATABASE_URL"),
   FRONTEND_URL: process.env.FRONTEND_URL ?? "http://localhost:4200",
+  BACKEND_URL: process.env.BACKEND_URL ?? "http://localhost:3000",
+
+  UPLOADS_DIR: process.env.UPLOADS_DIR ?? "uploads",
+  UPLOADS_URL_PREFIX: "/uploads",
+  MAX_IMAGE_SIZE_MB: Number(process.env.MAX_IMAGE_SIZE_MB ?? 5),
 
   JWT_SECRET: requerido("JWT_SECRET"),
   JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN ?? "15m",
