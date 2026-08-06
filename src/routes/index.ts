@@ -6,6 +6,9 @@ import eventosRoutes from "./eventos.routes";
 import modulosRoutes from "./modulos.routes";
 import searchRoutes from "./search.routes";
 import mensajesRoutes from "./mensajes.routes";
+import salasRoutes from "./salas.routes";
+import reservasRoutes from "./reservas.routes";
+import favoritosRoutes from "./favoritos.routes";
 
 const router = Router();
 
@@ -19,6 +22,9 @@ router.get("/", (_req, res) => {
       eventos: "/api/eventos",
       modulos: "/api/modulos",
       mensajes: "/api/mensajes (crear: público, listar/gestionar: Administrador/Editor)",
+      salas: "/api/salas",
+      reservas: "/api/reservas (requiere sesión)",
+      favoritos: "/api/favoritos (requiere sesión)",
       admin: "/api/admin (solo Administrador)",
     },
   });
@@ -29,6 +35,9 @@ router.use("/usuarios", usuariosRoutes);
 router.use("/eventos", eventosRoutes);
 router.use("/modulos", modulosRoutes);
 router.use("/mensajes", mensajesRoutes);
+router.use("/salas", salasRoutes);
+router.use("/reservas", reservasRoutes);
+router.use("/favoritos", favoritosRoutes);
 router.use("/admin", searchRoutes);
 
 export default router;

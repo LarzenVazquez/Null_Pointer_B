@@ -113,7 +113,6 @@ export async function cambiarRolUsuario(
     include: includeRoles,
   });
 
-  // Garantizamos que usuario no sea nulo antes de serializar (satisfacer a TS)
   if (!usuario)
     throw ApiError.noEncontrado("Usuario no encontrado tras la actualización");
 

@@ -12,14 +12,78 @@ model Usuario {
   email        String   @unique
   telefono     String?
   passwordHash String   @map("password_hash")
-  activo       Boolean  @default(true) // true = 1, false = 0
+  activo       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  roles    UsuarioRol[]
-  sesiones Sesion[]
+  roles     UsuarioRol[]
+  sesiones  Sesion[]
+  reservas  Reserva[]
+  favoritos Favorito[]
 
   @@map("usuarios")
+}
+
+enum EstadoReserva {
+  pendiente
+  confirmada
+  completada
+  cancelada
+
+  @@map("estado_reserva")
+}
+
+model Sala {
+  id          String   @id
+  nombre      String
+  precio      Int
+  capacidad   Int
+  m2          Int
+  badge       String
+  badgeLabel  String   @map("badge_label")
+  featured    Boolean  @default(false)
+  descripcion String
+  equipo      String[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  reservas  Reserva[]
+  favoritos Favorito[]
+
+  @@map("salas")
+}
+
+model Reserva {
+  id              String        @id @default(uuid())
+  usuarioId       Int           @map("usuario_id")
+  salaId          String        @map("sala_id")
+  fecha           String
+  hora            String
+  duracionHoras   Int           @map("duracion_horas")
+  precioSala      Int           @map("precio_sala")
+  servicios       Json
+  precioServicios Int           @map("precio_servicios")
+  precioTotal     Int           @map("precio_total")
+  estado          EstadoReserva @default(confirmada)
+  notas           String?
+  creadoEn        DateTime      @default(now()) @map("creado_en")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  sala    Sala    @relation(fields: [salaId], references: [id], onDelete: Cascade)
+
+  @@map("reservas")
+}
+
+model Favorito {
+  usuarioId Int      @map("usuario_id")
+  salaId    String   @map("sala_id")
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  sala    Sala    @relation(fields: [salaId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, salaId])
+  @@map("favoritos")
 }
 
 model Rol {

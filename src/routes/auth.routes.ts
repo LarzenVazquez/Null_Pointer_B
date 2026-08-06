@@ -12,9 +12,6 @@ import {
 
 const router = Router();
 
-// Llave pública para el cifrado híbrido del login (ver
-// src/utils/hybridCrypto.utils.ts). Debe pedirse ANTES de cada intento
-// de login; no requiere sesión.
 router.get("/public-key", authController.publicKey);
 
 router.post("/registro", validate(registroSchema), authController.registro);
@@ -30,7 +27,6 @@ router.post(
 router.post("/refresh", authController.refresh);
 router.post("/logout", authController.logout);
 
-// Rutas protegidas: requieren un access token válido.
 router.get("/perfil", requireAuth, authController.perfil);
 router.put(
   "/perfil",

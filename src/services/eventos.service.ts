@@ -122,7 +122,6 @@ const EVENTOS: Record<EventoTipo, EventoCalendario> = {
   },
 };
 
-// Variable en memoria del servidor para mantener el evento fijado
 let eventoFijadoGlobal: EventoTipo | null = null;
 
 export function setEventoFijado(tipo: EventoTipo | null): void {

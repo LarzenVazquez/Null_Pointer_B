@@ -1,6 +1,3 @@
-// Extiende el tipo Request de Express para incluir al usuario autenticado
-// que el middleware de auth adjunta tras validar el JWT.
-
 export interface UsuarioAutenticado {
   id: number;
   email: string;

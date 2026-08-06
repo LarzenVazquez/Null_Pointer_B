@@ -10,9 +10,6 @@ import {
 
 const router = Router();
 
-// Público: el formulario de Contacto (sin sesión) y el de Soporte (con
-// sesión) mandan aquí. optionalAuth adjunta req.usuario SOLO si hay un
-// token válido, sin bloquear la petición cuando no lo hay.
 router.post(
   "/",
   optionalAuth,
@@ -20,8 +17,6 @@ router.post(
   mensajesController.crear,
 );
 
-// De aquí para abajo: solo Administrador/Editor pueden ver y gestionar
-// la bandeja de mensajes.
 router.use(requireAuth, requireRole("Administrador", "Editor"));
 
 router.get("/", mensajesController.listar);

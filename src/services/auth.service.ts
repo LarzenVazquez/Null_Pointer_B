@@ -11,9 +11,6 @@ import type { LoginInput, RegistroInput } from "../validators/auth.validators";
 
 const ROL_POR_DEFECTO = "Usuario";
 
-// Forma parcial del resultado del include anidado usado más abajo
-// (roles -> rol -> permisos -> permiso). Se declara explícitamente en
-// vez de dejar que TS infiera "any" en el resultado del include.
 interface UsuarioRolConPermisos {
   rol: {
     nombre: string;
@@ -21,11 +18,6 @@ interface UsuarioRolConPermisos {
   };
 }
 
-/**
- * Carga los roles y permisos "aplanados" de un usuario, para incrustarlos
- * en el access token y así no tener que golpear la BD en cada request
- * protegida (solo se recalculan al hacer login/refresh).
- */
 async function obtenerRolesYPermisos(usuarioId: number) {
   const usuarioConRoles = await prisma.usuario.findUnique({
     where: { id: usuarioId },
@@ -79,11 +71,6 @@ function datosPublicosUsuario(usuario: {
   };
 }
 
-/**
- * Registro de un nuevo usuario. Siempre se le asigna el rol "Usuario"
- * por defecto: nadie puede auto-asignarse Administrador o Editor desde
- * el registro público (eso solo lo hace un Administrador después).
- */
 export async function registrarUsuario(datos: RegistroInput) {
   const existente = await prisma.usuario.findUnique({
     where: { email: datos.email },
@@ -96,7 +83,7 @@ export async function registrarUsuario(datos: RegistroInput) {
     where: { nombre: ROL_POR_DEFECTO },
   });
   if (!rolUsuario) {
-    // Si esto ocurre, falta correr el seed de roles/permisos.
+
     throw ApiError.interno(
       "No se encontró el rol por defecto. Ejecuta el seed de la base de datos."
     );
@@ -120,10 +107,6 @@ export async function registrarUsuario(datos: RegistroInput) {
   return datosPublicosUsuario(nuevoUsuario);
 }
 
-/**
- * Valida credenciales, genera un access token (JWT) y crea una sesión
- * (refresh token) persistida en BD para poder invalidarla en logout.
- */
 export async function iniciarSesion(
   datos: LoginInput,
   contexto: { userAgent?: string; ip?: string }
@@ -132,8 +115,6 @@ export async function iniciarSesion(
     where: { email: datos.email },
   });
 
-  // Mensaje idéntico tanto si el correo no existe como si el password
-  // es incorrecto: evita que un atacante pueda enumerar correos válidos.
   const credencialesInvalidas = () =>
     ApiError.noAutorizado("Correo o contraseña incorrectos");
 
@@ -182,12 +163,6 @@ export async function iniciarSesion(
   };
 }
 
-/**
- * Rota el refresh token: invalida el actual y emite uno nuevo + un nuevo
- * access token. La rotación evita que un refresh token robado siga
- * siendo válido indefinidamente (si se reutiliza uno ya rotado, se revoca
- * toda la sesión, ver detección de reuso abajo).
- */
 export async function refrescarSesion(
   refreshTokenPlano: string,
   contexto: { userAgent?: string; ip?: string }
@@ -215,7 +190,6 @@ export async function refrescarSesion(
     throw ApiError.prohibido("Esta cuenta está deshabilitada.");
   }
 
-  // Invalida la sesión actual (rotación) y crea una nueva.
   await prisma.sesion.update({
     where: { id: sesion.id },
     data: { valida: false },
@@ -253,11 +227,6 @@ export async function refrescarSesion(
   };
 }
 
-/**
- * Cierre de sesión: invalida el refresh token actual en BD.
- * El access token en memoria del cliente seguirá "vivo" hasta que expire
- * (es corto, 15 min por defecto) pero ya no podrá renovarse.
- */
 export async function cerrarSesion(refreshTokenPlano: string | undefined) {
   if (!refreshTokenPlano) return;
   const hash = hashRefreshToken(refreshTokenPlano);
@@ -267,7 +236,6 @@ export async function cerrarSesion(refreshTokenPlano: string | undefined) {
   });
 }
 
-/** Cierra TODAS las sesiones activas de un usuario (ej. "cerrar sesión en todos los dispositivos"). */
 export async function cerrarTodasLasSesiones(usuarioId: number) {
   await prisma.sesion.updateMany({
     where: { usuarioId, valida: true },
@@ -280,12 +248,6 @@ export async function obtenerPerfil(usuarioId: number) {
   return { ...datosPublicosUsuario(usuario), roles, permisos };
 }
 
-/**
- * Autoedición de perfil: a diferencia de PUT /api/usuarios/:id (que exige
- * el permiso "usuarios.editar" y está pensado para administración), esto
- * permite a CUALQUIER usuario autenticado editar únicamente su propio
- * nombre/teléfono. Nunca permite cambiar email, password ni rol desde aquí.
- */
 export async function actualizarPerfilPropio(
   usuarioId: number,
   cambios: { nombre?: string; telefono?: string }

@@ -24,11 +24,6 @@ export interface NuevoMensajeInput {
   usuarioId?: number;
 }
 
-// Igual que el evento fijado en eventos.service.ts: esta lista vive SOLO
-// en la memoria del proceso de Node. A propósito NO se guarda en la base
-// de datos, así que si el servidor se reinicia (o escalas a más de una
-// instancia), los mensajes se pierden. Son visibles para todos mientras
-// el proceso siga vivo, pero no son persistentes.
 const mensajes: Mensaje[] = [];
 
 export function crearMensaje(input: NuevoMensajeInput): Mensaje {

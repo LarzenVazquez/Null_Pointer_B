@@ -1,7 +1,12 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import bcrypt from "bcrypt";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("Sembrando roles...");
@@ -46,7 +51,6 @@ async function main() {
 
   console.log("Asignando permisos a roles...");
 
-  // Administrador: todos los permisos
   for (const permiso of Object.values(permisosCreados)) {
     await prisma.rolPermiso.upsert({
       where: {
@@ -63,7 +67,6 @@ async function main() {
     });
   }
 
-  // Editor: gestion parcial (salas, reservas) + ver usuarios
   const permisosEditor = [
     "usuarios.ver",
     "salas.ver",
@@ -106,6 +109,74 @@ async function main() {
       },
     });
   }
+
+  console.log("Creando salas iniciales...");
+
+  const salasIniciales = [
+    {
+      id: "A",
+      nombre: "Sala A",
+      precio: 150,
+      capacidad: 6,
+      m2: 40,
+      badge: "popular",
+      badgeLabel: "Más popular",
+      featured: true,
+      descripcion:
+        "Nuestra sala premium con cabina de control independiente. Ideal para bandas completas y sesiones de grabacion de alta exigencia.",
+      equipo: [
+        "Bateria Pearl Export Pro + Zildjian A",
+        "Monitoreo independiente por zona",
+        "Cabina de control",
+        "Marshall DSL40CR + Ampeg BA-210",
+      ],
+    },
+    {
+      id: "B",
+      nombre: "Sala B",
+      precio: 110,
+      capacidad: 4,
+      m2: 28,
+      badge: "pro",
+      badgeLabel: "PRO",
+      featured: false,
+      descripcion:
+        "Sala profesional con mesa de mezcla digital de 32 canales. Perfecta para bandas de 4 elementos que buscan sonido de estudio.",
+      equipo: [
+        "Bateria Mapex Saturn",
+        "Mesa Behringer X32 (32ch)",
+        "PA JBL profesional",
+        "Amplificadores Marshall + Ampeg",
+      ],
+    },
+    {
+      id: "C",
+      nombre: "Sala C",
+      precio: 80,
+      capacidad: 3,
+      m2: 18,
+      badge: "std",
+      badgeLabel: "STD",
+      featured: false,
+      descripcion:
+        "Sala estandar ideal para trios, duos o solistas. El mejor costo-beneficio para ensayos regulares.",
+      equipo: [
+        "Bateria Pearl Roadshow",
+        "Amplificadores basicos",
+        "Monitor de retorno",
+        "Ideal para grupos de hasta 3",
+      ],
+    },
+  ];
+
+  for (const s of salasIniciales) {
+    await prisma.sala.upsert({
+      where: { id: s.id },
+      update: s,
+      create: s,
+    });
+  }
+  console.log(`${salasIniciales.length} salas creadas/actualizadas.`);
 
   console.log("Creando usuarios iniciales...");
 

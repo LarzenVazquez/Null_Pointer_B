@@ -1,12 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiError } from "../utils/ApiError";
 
-/**
- * requireRole("Administrador", "Editor")
- * ---------------------------------------
- * Autoriza si el usuario autenticado tiene AL MENOS UNO de los roles
- * indicados. Debe usarse siempre después de requireAuth.
- */
 export function requireRole(...rolesPermitidos: string[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.usuario) {
@@ -31,13 +25,6 @@ export function requireRole(...rolesPermitidos: string[]) {
   };
 }
 
-/**
- * requirePermission("usuarios.crear", "usuarios.editar")
- * --------------------------------------------------------
- * Autorización más granular basada en permisos (tabla `permisos`,
- * vía `rol_permiso`). Por defecto exige TODOS los permisos listados;
- * pasa { modo: "alguno" } para exigir solo uno.
- */
 export function requirePermission(
   permisosRequeridos: string[],
   opciones: { modo?: "todos" | "alguno" } = {}
@@ -70,13 +57,6 @@ export function requirePermission(
   };
 }
 
-/**
- * requireSelfOrRole("Administrador")
- * -----------------------------------
- * Permite la acción si el usuario autenticado es el mismo del recurso
- * (:id de la ruta) O si tiene alguno de los roles indicados.
- * Ej: un usuario puede editar SU propio perfil; un admin puede editar cualquiera.
- */
 export function requireSelfOrRole(...rolesPermitidos: string[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.usuario) return next(ApiError.noAutorizado());

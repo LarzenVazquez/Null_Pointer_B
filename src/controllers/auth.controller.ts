@@ -25,19 +25,12 @@ function clearRefreshCookie(res: Response) {
   res.clearCookie(env.REFRESH_COOKIE_NAME, { ...cookieOptions, maxAge: 0 });
 }
 
-// Llave pública RSA vigente para que el frontend cifre el login
-// (ver src/utils/hybridCrypto.utils.ts). No requiere autenticación:
-// se necesita ANTES de poder iniciar sesión.
 export const publicKey = asyncHandler(async (_req: Request, res: Response) => {
   res.status(200).json({ ok: true, publicKey: getPublicKeyPem() });
 });
 
 export const registro = asyncHandler(async (req: Request, res: Response) => {
-  // El cifrado de la contraseña (bcrypt) se hace UNA sola vez, dentro de
-  // authService.registrarUsuario. Aquí solo se reenvía la contraseña en
-  // texto plano recibida del formulario: si se hashea también en este
-  // controller, el service la volvería a hashear (hash de un hash) y
-  // el usuario jamás podría volver a iniciar sesión con su contraseña real.
+
   const usuario = await authService.registrarUsuario(req.body);
 
   res.status(201).json({
@@ -65,8 +58,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       accessToken,
     });
   } catch (err) {
-    // Solo contamos como "intento fallido" errores de credenciales,
-    // no errores de infraestructura (500) que no dependen del atacante.
+
     if (err instanceof ApiError && err.statusCode === 401) {
       registrarLoginFallido(req);
     }

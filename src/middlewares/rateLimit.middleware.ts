@@ -2,15 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
 
-/**
- * Limitador de intentos en memoria (suficiente para el alcance de la
- * práctica; en un entorno productivo real se recomienda Redis para que
- * el contador sea compartido entre instancias del servidor).
- *
- * Objetivo: mitigar ataques de fuerza bruta / credential stuffing sobre
- * /api/auth/login, bloqueando temporalmente tras varios intentos fallidos
- * consecutivos combinando email + IP como clave.
- */
 interface Intento {
   fallos: number;
   bloqueadoHasta?: number;

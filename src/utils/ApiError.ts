@@ -1,9 +1,3 @@
-/**
- * Error de aplicación con código HTTP asociado.
- * Los controllers/services lanzan ApiError y el errorHandler central
- * se encarga de convertirlo en una respuesta JSON consistente,
- * sin filtrar detalles internos (stack, mensajes de Prisma, etc.).
- */
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly detalles?: unknown;

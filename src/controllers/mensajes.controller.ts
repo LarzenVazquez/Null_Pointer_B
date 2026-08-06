@@ -13,8 +13,7 @@ export const crear = asyncHandler(async (req: Request, res: Response) => {
     asunto,
     mensaje,
     origen,
-    // usuarioId sale del token (req.usuario), NUNCA del body: así nadie
-    // puede hacerse pasar por otro usuario en el mensaje.
+
     usuarioId: req.usuario?.id,
   });
 

@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Password segura: min 8, al menos una mayúscula, una minúscula y un número.
 const passwordSchema = z
   .string()
   .min(8, "La contraseña debe tener al menos 8 caracteres")

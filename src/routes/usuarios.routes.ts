@@ -12,7 +12,6 @@ import {
 
 const router = Router();
 
-// TODA esta sección requiere estar autenticado.
 router.use(requireAuth);
 
 router.get("/", requirePermission(["usuarios.ver"]), usuariosController.listar);
@@ -54,7 +53,6 @@ router.patch(
   usuariosController.cambiarRol,
 );
 
-// NUEVA RUTA: Cambiar estado (Baja Lógica)
 router.patch(
   "/:id/estado",
   validate(idParamSchema, "params"),

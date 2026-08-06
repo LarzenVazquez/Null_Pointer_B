@@ -4,12 +4,6 @@ import { ApiError } from "../utils/ApiError";
 
 type Fuente = "body" | "params" | "query";
 
-/**
- * validate(schema, "body")
- * Valida req[fuente] contra un esquema Zod. Si falla, responde 400 con
- * el detalle de los campos inválidos (sin exponer información interna).
- * Si pasa, reemplaza req[fuente] con los datos ya parseados/saneados.
- */
 export function validate(schema: AnyZodObject, fuente: Fuente = "body") {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {

@@ -2,17 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { ApiError } from "../utils/ApiError";
 import { verificarAccessToken } from "../utils/jwt.utils";
 
-/**
- * requireAuth
- * -----------
- * Protege cualquier ruta (o router completo) exigiendo un access token
- * válido en el header `Authorization: Bearer <token>`.
- *
- * Esto es lo que garantiza la "protección contra acceso directo por URL":
- * sin importar cómo llegue la petición (fetch del SPA, curl, Postman,
- * un link directo, etc.), si no hay un token válido, la petición nunca
- * llega al controller -> se corta aquí con 401.
- */
 export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
 
@@ -40,13 +29,6 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   }
 }
 
-/**
- * optionalAuth
- * ------------
- * Igual que requireAuth pero no bloquea si no hay token: solo adjunta
- * req.usuario si el token es válido. Útil para endpoints públicos que
- * cambian ligeramente su respuesta si el usuario está autenticado.
- */
 export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) return next();

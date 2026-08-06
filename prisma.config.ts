@@ -1,12 +1,12 @@
 import "dotenv/config";
-import { defineConfig } from "@prisma/config";
+import { defineConfig, env } from "@prisma/config";
 
 export default defineConfig({
-  earlyAccess: true,
   schema: "./prisma/schema.prisma",
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+  migrations: {
+    seed: "npx tsx ./prisma/seed.ts",
   },
 });
