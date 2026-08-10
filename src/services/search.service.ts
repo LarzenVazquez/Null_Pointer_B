@@ -13,7 +13,7 @@ export async function indexUsuario(usuario: {
     await esClient.index({
       index: ES_INDICES.usuarios,
       id: String(usuario.id),
-      document: {
+      body: {
         id: usuario.id,
         nombre: usuario.nombre,
         email: usuario.email,
@@ -69,7 +69,7 @@ export async function reindexarConfiguracion(): Promise<void> {
 
   await esClient.bulk({
     refresh: true,
-    operations: operaciones.flatMap(({ id, doc }) => [
+    body: operaciones.flatMap(({ id, doc }) => [
       { index: { _index: ES_INDICES.configuracion, _id: id } },
       doc,
     ]),
@@ -85,7 +85,7 @@ export async function reindexarTodosLosUsuarios(): Promise<number> {
 
   await esClient.bulk({
     refresh: true,
-    operations: usuarios.flatMap((u) => [
+    body: usuarios.flatMap((u) => [
       { index: { _index: ES_INDICES.usuarios, _id: String(u.id) } },
       {
         id: u.id,
@@ -113,30 +113,34 @@ export async function buscarGlobal(query: string): Promise<ResultadoBusqueda> {
   const [resUsuarios, resConfig] = await Promise.all([
     esClient.search({
       index: ES_INDICES.usuarios,
-      query: {
-        multi_match: {
-          query: texto,
-          fields: ["nombre", "email", "telefono"],
-          fuzziness: "AUTO",
+      body: {
+        query: {
+          multi_match: {
+            query: texto,
+            fields: ["nombre", "email", "telefono"],
+            fuzziness: "AUTO",
+          },
         },
+        size: 10,
       },
-      size: 10,
     }),
     esClient.search({
       index: ES_INDICES.configuracion,
-      query: {
-        multi_match: {
-          query: texto,
-          fields: ["nombre", "descripcion"],
-          fuzziness: "AUTO",
+      body: {
+        query: {
+          multi_match: {
+            query: texto,
+            fields: ["nombre", "descripcion"],
+            fuzziness: "AUTO",
+          },
         },
+        size: 10,
       },
-      size: 10,
     }),
   ]);
 
   return {
-    usuarios: resUsuarios.hits.hits.map((h) => h._source),
-    configuracion: resConfig.hits.hits.map((h) => h._source),
+    usuarios: resUsuarios.body.hits.hits.map((h: any) => h._source),
+    configuracion: resConfig.body.hits.hits.map((h: any) => h._source),
   };
 }

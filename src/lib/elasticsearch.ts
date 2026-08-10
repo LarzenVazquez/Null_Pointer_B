@@ -17,14 +17,16 @@ export async function asegurarIndices(): Promise<void> {
   if (!existeUsuarios) {
     await esClient.indices.create({
       index: ES_INDICES.usuarios,
-      mappings: {
-        properties: {
-          id: { type: "integer" },
-          nombre: { type: "text" },
-          email: { type: "text" },
-          telefono: { type: "text" },
-          roles: { type: "keyword" },
-          activo: { type: "boolean" },
+      body: {
+        mappings: {
+          properties: {
+            id: { type: "integer" },
+            nombre: { type: "text" },
+            email: { type: "text" },
+            telefono: { type: "text" },
+            roles: { type: "keyword" },
+            activo: { type: "boolean" },
+          },
         },
       },
     });
@@ -36,12 +38,14 @@ export async function asegurarIndices(): Promise<void> {
   if (!existeConfig) {
     await esClient.indices.create({
       index: ES_INDICES.configuracion,
-      mappings: {
-        properties: {
-          id: { type: "integer" },
-          tipo: { type: "keyword" },
-          nombre: { type: "text" },
-          descripcion: { type: "text" },
+      body: {
+        mappings: {
+          properties: {
+            id: { type: "integer" },
+            tipo: { type: "keyword" },
+            nombre: { type: "text" },
+            descripcion: { type: "text" },
+          },
         },
       },
     });
