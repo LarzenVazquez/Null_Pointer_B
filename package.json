@@ -19,6 +19,7 @@
   "dependencies": {
     "@elastic/elasticsearch": "^8.15.0",
     "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@prisma/config": "^7.9.1",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
@@ -32,7 +33,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@prisma/client": "^7.9.1",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
