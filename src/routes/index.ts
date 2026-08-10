@@ -13,20 +13,8 @@ import favoritosRoutes from "./favoritos.routes";
 const router = Router();
 
 router.get("/", (_req, res) => {
-  res.json({
-    ok: true,
-    mensaje: "API de autenticación y autorización (Prácticas 9 y 10)",
-    endpoints: {
-      auth: "/api/auth",
-      usuarios: "/api/usuarios",
-      eventos: "/api/eventos",
-      modulos: "/api/modulos",
-      mensajes: "/api/mensajes (crear: público, listar/gestionar: Administrador/Editor)",
-      salas: "/api/salas",
-      reservas: "/api/reservas (requiere sesión)",
-      favoritos: "/api/favoritos (requiere sesión)",
-      admin: "/api/admin (solo Administrador)",
-    },
+  res.status(200).json({
+    status: "200",
   });
 });
 
