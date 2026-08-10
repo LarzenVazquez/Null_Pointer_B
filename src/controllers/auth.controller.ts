@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, CookieOptions } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
@@ -9,10 +9,10 @@ import {
   registrarLoginFallido,
 } from "../middlewares/rateLimit.middleware";
 
-const cookieOptions = {
+const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: env.isProduction,
-  sameSite: "lax" as const,
+  sameSite: "lax",
   path: "/api/auth",
   maxAge: env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
 };
@@ -30,7 +30,6 @@ export const publicKey = asyncHandler(async (_req: Request, res: Response) => {
 });
 
 export const registro = asyncHandler(async (req: Request, res: Response) => {
-
   const usuario = await authService.registrarUsuario(req.body);
 
   res.status(201).json({
@@ -58,7 +57,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       accessToken,
     });
   } catch (err) {
-
     if (err instanceof ApiError && err.statusCode === 401) {
       registrarLoginFallido(req);
     }
@@ -68,6 +66,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const tokenActual = req.cookies?.[env.REFRESH_COOKIE_NAME];
+
   if (!tokenActual) {
     throw ApiError.noAutorizado("No hay sesión activa");
   }
@@ -85,15 +84,21 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
   const tokenActual = req.cookies?.[env.REFRESH_COOKIE_NAME];
-  await authService.cerrarSesion(tokenActual);
+
+  if (tokenActual) {
+    await authService.cerrarSesion(tokenActual);
+  }
+
   clearRefreshCookie(res);
   res.status(200).json({ ok: true, mensaje: "Sesión cerrada correctamente" });
 });
 
 export const logoutTodos = asyncHandler(async (req: Request, res: Response) => {
   if (!req.usuario) throw ApiError.noAutorizado();
+
   await authService.cerrarTodasLasSesiones(req.usuario.id);
   clearRefreshCookie(res);
+
   res
     .status(200)
     .json({ ok: true, mensaje: "Se cerraron todas las sesiones activas" });
@@ -101,6 +106,7 @@ export const logoutTodos = asyncHandler(async (req: Request, res: Response) => {
 
 export const perfil = asyncHandler(async (req: Request, res: Response) => {
   if (!req.usuario) throw ApiError.noAutorizado();
+
   const usuario = await authService.obtenerPerfil(req.usuario.id);
   res.status(200).json({ ok: true, usuario });
 });
@@ -108,10 +114,12 @@ export const perfil = asyncHandler(async (req: Request, res: Response) => {
 export const actualizarPerfil = asyncHandler(
   async (req: Request, res: Response) => {
     if (!req.usuario) throw ApiError.noAutorizado();
+
     const usuario = await authService.actualizarPerfilPropio(
       req.usuario.id,
       req.body,
     );
+
     res.status(200).json({ ok: true, mensaje: "Perfil actualizado", usuario });
   },
 );
