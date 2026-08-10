@@ -11,7 +11,8 @@ export async function buscar(req: Request, res: Response) {
     const resultados = await buscarGlobal(query);
     return res.status(200).json({
       ok: true,
-      ...resultados,
+      query,
+      resultados,
     });
   } catch (error: any) {
     console.error("[ERROR CRITICO EN RUTA /buscar]:", error);
