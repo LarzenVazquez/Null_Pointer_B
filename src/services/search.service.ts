@@ -110,37 +110,46 @@ export async function buscarGlobal(query: string): Promise<ResultadoBusqueda> {
   const texto = query.trim();
   if (!texto) return { usuarios: [], configuracion: [] };
 
-  const [resUsuarios, resConfig] = await Promise.all([
-    esClient.search({
-      index: ES_INDICES.usuarios,
-      body: {
-        query: {
-          multi_match: {
-            query: texto,
-            fields: ["nombre", "email", "telefono"],
-            fuzziness: "AUTO",
+  try {
+    const [resUsuarios, resConfig] = await Promise.all([
+      esClient.search({
+        index: ES_INDICES.usuarios,
+        body: {
+          query: {
+            multi_match: {
+              query: texto,
+              fields: ["nombre", "email", "telefono"],
+              fuzziness: "AUTO",
+            },
           },
+          size: 10,
         },
-        size: 10,
-      },
-    }),
-    esClient.search({
-      index: ES_INDICES.configuracion,
-      body: {
-        query: {
-          multi_match: {
-            query: texto,
-            fields: ["nombre", "descripcion"],
-            fuzziness: "AUTO",
+      }),
+      esClient.search({
+        index: ES_INDICES.configuracion,
+        body: {
+          query: {
+            multi_match: {
+              query: texto,
+              fields: ["nombre", "descripcion"],
+              fuzziness: "AUTO",
+            },
           },
+          size: 10,
         },
-        size: 10,
-      },
-    }),
-  ]);
+      }),
+    ]);
 
-  return {
-    usuarios: resUsuarios.body.hits.hits.map((h: any) => h._source),
-    configuracion: resConfig.body.hits.hits.map((h: any) => h._source),
-  };
+    return {
+      usuarios: resUsuarios.body?.hits?.hits?.map((h: any) => h._source) || [],
+      configuracion:
+        resConfig.body?.hits?.hits?.map((h: any) => h._source) || [],
+    };
+  } catch (error: any) {
+    console.error(
+      "[search] Error detallado en Elasticsearch:",
+      error?.meta?.body || error.message,
+    );
+    return { usuarios: [], configuracion: [] };
+  }
 }
