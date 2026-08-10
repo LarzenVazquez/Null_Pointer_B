@@ -11,25 +11,25 @@ export const app = express();
 
 app.use(
   helmet({
-    // Permite que las imágenes servidas desde /uploads se puedan cargar
-    // desde el frontend (otro origen) sin ser bloqueadas por CORP.
     crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
+  }),
 );
 
 app.use(
   cors({
     origin: env.FRONTEND_URL,
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Archivos estáticos gestionados por el backend (p. ej. imágenes de salas).
-app.use(env.UPLOADS_URL_PREFIX, express.static(path.join(process.cwd(), env.UPLOADS_DIR)));
+app.use(
+  env.UPLOADS_URL_PREFIX,
+  express.static(path.join(process.cwd(), env.UPLOADS_DIR)),
+);
 
 if (!env.isProduction) {
   app.use((req, _res, next) => {

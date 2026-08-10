@@ -17,7 +17,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.15.0",
+    "@elastic/elasticsearch": "^7.17.14",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@prisma/config": "^7.9.1",
