@@ -14,7 +14,7 @@ export async function asegurarIndices(): Promise<void> {
   const existeUsuarios = await esClient.indices.exists({
     index: ES_INDICES.usuarios,
   });
-  if (!existeUsuarios) {
+  if (!existeUsuarios.body) {
     await esClient.indices.create({
       index: ES_INDICES.usuarios,
       body: {
@@ -30,12 +30,13 @@ export async function asegurarIndices(): Promise<void> {
         },
       },
     });
+    console.log(`[search] Indice ${ES_INDICES.usuarios} creado.`);
   }
 
   const existeConfig = await esClient.indices.exists({
     index: ES_INDICES.configuracion,
   });
-  if (!existeConfig) {
+  if (!existeConfig.body) {
     await esClient.indices.create({
       index: ES_INDICES.configuracion,
       body: {
@@ -49,5 +50,6 @@ export async function asegurarIndices(): Promise<void> {
         },
       },
     });
+    console.log(`[search] Indice ${ES_INDICES.configuracion} creado.`);
   }
 }
