@@ -156,7 +156,7 @@ export function obtenerEventoActivo(
     return obtenerEventoPorTipo(eventoFijadoGlobal);
   }
 
-  const mes = fecha.getMonth() + 1; // 1-12
+  const mes = fecha.getMonth() + 1;
   const dia = fecha.getDate();
 
   for (const key of Object.keys(EVENTOS) as EventoTipo[]) {
