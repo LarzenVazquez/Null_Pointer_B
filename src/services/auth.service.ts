@@ -37,7 +37,7 @@ async function obtenerRolesYPermisos(usuarioId: number) {
   if (!usuarioConRoles) throw ApiError.noEncontrado("Usuario no encontrado");
 
   const roles = usuarioConRoles.roles.map(
-    (ur: UsuarioRolConPermisos) => ur.rol.nombre
+    (ur: UsuarioRolConPermisos) => ur.rol.nombre,
   );
   const permisosSet = new Set<string>();
   for (const ur of usuarioConRoles.roles as UsuarioRolConPermisos[]) {
@@ -83,15 +83,12 @@ export async function registrarUsuario(datos: RegistroInput) {
     where: { nombre: ROL_POR_DEFECTO },
   });
   if (!rolUsuario) {
-
-    throw ApiError.interno(
-      "No se encontró el rol por defecto. Ejecuta el seed de la base de datos."
-    );
+    throw ApiError.interno("No se encontró el rol por defecto.");
   }
 
   const passwordHash = await bcrypt.hash(
     datos.password,
-    env.BCRYPT_SALT_ROUNDS
+    env.BCRYPT_SALT_ROUNDS,
   );
 
   const nuevoUsuario = await prisma.usuario.create({
@@ -109,7 +106,7 @@ export async function registrarUsuario(datos: RegistroInput) {
 
 export async function iniciarSesion(
   datos: LoginInput,
-  contexto: { userAgent?: string; ip?: string }
+  contexto: { userAgent?: string; ip?: string },
 ) {
   const usuario = await prisma.usuario.findUnique({
     where: { email: datos.email },
@@ -121,13 +118,13 @@ export async function iniciarSesion(
   if (!usuario) throw credencialesInvalidas();
   if (!usuario.activo) {
     throw ApiError.prohibido(
-      "Esta cuenta está deshabilitada. Contacta a un administrador."
+      "Esta cuenta está deshabilitada. Contacta a un administrador.",
     );
   }
 
   const passwordValido = await bcrypt.compare(
     datos.password,
-    usuario.passwordHash
+    usuario.passwordHash,
   );
   if (!passwordValido) throw credencialesInvalidas();
 
@@ -143,7 +140,7 @@ export async function iniciarSesion(
 
   const refreshTokenPlano = generarRefreshToken();
   const expiraEn = new Date(
-    Date.now() + env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000
+    Date.now() + env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
   );
 
   await prisma.sesion.create({
@@ -165,7 +162,7 @@ export async function iniciarSesion(
 
 export async function refrescarSesion(
   refreshTokenPlano: string,
-  contexto: { userAgent?: string; ip?: string }
+  contexto: { userAgent?: string; ip?: string },
 ) {
   const hash = hashRefreshToken(refreshTokenPlano);
 
@@ -199,7 +196,7 @@ export async function refrescarSesion(
 
   const nuevoRefreshPlano = generarRefreshToken();
   const expiraEn = new Date(
-    Date.now() + env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000
+    Date.now() + env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
   );
 
   await prisma.sesion.create({
@@ -250,7 +247,7 @@ export async function obtenerPerfil(usuarioId: number) {
 
 export async function actualizarPerfilPropio(
   usuarioId: number,
-  cambios: { nombre?: string; telefono?: string }
+  cambios: { nombre?: string; telefono?: string },
 ) {
   const usuario = await prisma.usuario.update({
     where: { id: usuarioId },

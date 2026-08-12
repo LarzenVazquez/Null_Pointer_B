@@ -3,7 +3,7 @@ import { z } from "zod";
 const passwordSchema = z
   .string()
   .min(8, "La contraseña debe tener al menos 8 caracteres")
-  .max(72, "La contraseña es demasiado larga") // límite práctico de bcrypt
+  .max(72, "La contraseña es demasiado larga")
   .regex(/[a-z]/, "Debe incluir al menos una letra minúscula")
   .regex(/[A-Z]/, "Debe incluir al menos una letra mayúscula")
   .regex(/[0-9]/, "Debe incluir al menos un número");

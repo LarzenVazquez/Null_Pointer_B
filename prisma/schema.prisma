@@ -72,14 +72,6 @@ model Reserva {
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   sala    Sala    @relation(fields: [salaId], references: [id], onDelete: Cascade)
-
-  // Nota: además existe un índice único parcial a nivel de base de datos
-  // (sala_id, fecha, hora) WHERE estado <> 'cancelada', creado a mano en la
-  // migración 20260812000000_reservas_slot_unico porque Prisma Client aún
-  // no soporta índices únicos parciales en el schema declarativo. Ese
-  // índice es la última línea de defensa contra duplicados exactos; el
-  // solapamiento por duración (p. ej. 10:00+2h vs 11:00+1h) se valida en
-  // reservas.service.ts antes de insertar.
   @@map("reservas")
 }
 
