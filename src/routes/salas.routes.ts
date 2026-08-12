@@ -12,11 +12,13 @@ import {
 
 const router = Router();
 
-// Endpoints públicos: cualquiera puede ver el catálogo de salas.
 router.get("/", salasController.listar);
-router.get("/:id", validate(idSalaParamSchema, "params"), salasController.obtenerPorId);
+router.get(
+  "/:id",
+  validate(idSalaParamSchema, "params"),
+  salasController.obtenerPorId,
+);
 
-// A partir de aquí, todo requiere sesión y permisos de gestión de salas.
 router.post(
   "/",
   requireAuth,

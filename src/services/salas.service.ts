@@ -1,7 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { eliminarArchivoDeImagen } from "../middlewares/upload.middleware";
-import type { CrearSalaInput, ActualizarSalaInput } from "../validators/salas.validators";
+import type {
+  CrearSalaInput,
+  ActualizarSalaInput,
+} from "../validators/salas.validators";
 
 function serializar(sala: any) {
   return {
@@ -20,14 +23,16 @@ function serializar(sala: any) {
 }
 
 function normalizarId(nombre: string): string {
-  return nombre
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // quita acentos
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 30) || "sala";
+  return (
+    nombre
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // quita acentos
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 30) || "sala"
+  );
 }
 
 async function generarIdUnico(nombre: string): Promise<string> {
@@ -90,9 +95,9 @@ export async function actualizarSala(
   imagenSubidaUrl?: string,
 ) {
   const salaActual = await prisma.sala.findUnique({ where: { id } });
-  if (!salaActual) throw ApiError.noEncontrado(`No existe una sala con id '${id}'`);
+  if (!salaActual)
+    throw ApiError.noEncontrado(`No existe una sala con id '${id}'`);
 
-  // Si se subió una imagen nueva, eliminamos la anterior (si era un archivo local).
   if (imagenSubidaUrl && salaActual.imagenUrl) {
     eliminarArchivoDeImagen(salaActual.imagenUrl);
   }
@@ -102,12 +107,18 @@ export async function actualizarSala(
     data: {
       ...(cambios.nombre !== undefined ? { nombre: cambios.nombre } : {}),
       ...(cambios.precio !== undefined ? { precio: cambios.precio } : {}),
-      ...(cambios.capacidad !== undefined ? { capacidad: cambios.capacidad } : {}),
+      ...(cambios.capacidad !== undefined
+        ? { capacidad: cambios.capacidad }
+        : {}),
       ...(cambios.m2 !== undefined ? { m2: cambios.m2 } : {}),
       ...(cambios.badge !== undefined ? { badge: cambios.badge } : {}),
-      ...(cambios.badgeLabel !== undefined ? { badgeLabel: cambios.badgeLabel } : {}),
+      ...(cambios.badgeLabel !== undefined
+        ? { badgeLabel: cambios.badgeLabel }
+        : {}),
       ...(cambios.featured !== undefined ? { featured: cambios.featured } : {}),
-      ...(cambios.descripcion !== undefined ? { descripcion: cambios.descripcion } : {}),
+      ...(cambios.descripcion !== undefined
+        ? { descripcion: cambios.descripcion }
+        : {}),
       ...(cambios.equipo !== undefined ? { equipo: cambios.equipo } : {}),
       ...(imagenSubidaUrl
         ? { imagenUrl: imagenSubidaUrl }
@@ -136,7 +147,6 @@ export async function eliminarSala(id: string, forzar = false) {
       );
     }
     if (favoritosCount > 0) {
-      // Los favoritos no son bloqueantes por sí solos, pero se limpian igual.
     }
   }
 

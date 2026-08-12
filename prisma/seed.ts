@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcrypt";
-import { calcularFingerprintPassword } from "../src/utils/passwordFingerprint.utils";
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
@@ -237,18 +236,10 @@ async function main() {
     },
   ];
 
-  const passwordsUnicas = new Set(usuariosIniciales.map((u) => u.password));
-  if (passwordsUnicas.size !== usuariosIniciales.length) {
-    throw new Error(
-      "El seed tiene contraseñas repetidas entre usuarios; cada cuenta debe tener una contraseña distinta.",
-    );
-  }
-
   const usuariosCreados: Record<string, { id: number }> = {};
 
   for (const u of usuariosIniciales) {
     const passwordHash = await bcrypt.hash(u.password, 10);
-    const passwordFingerprint = calcularFingerprintPassword(u.password);
 
     const usuario = await prisma.usuario.upsert({
       where: { email: u.email },
@@ -256,14 +247,12 @@ async function main() {
         nombre: u.nombre,
         telefono: u.telefono,
         passwordHash,
-        passwordFingerprint,
       },
       create: {
         nombre: u.nombre,
         email: u.email,
         telefono: u.telefono,
         passwordHash,
-        passwordFingerprint,
       },
     });
     usuariosCreados[u.email] = usuario;

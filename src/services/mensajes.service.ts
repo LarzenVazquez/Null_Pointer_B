@@ -48,11 +48,6 @@ function serializar(mensaje: {
   };
 }
 
-// Los mensajes del formulario de contacto en la página principal y los
-// mensajes de soporte se guardan juntos en la misma tabla `mensajes`,
-// diferenciados por el campo `origen` ("contacto" | "soporte"). Así
-// ambos quedan persistidos en base de datos y ya no se pierden al
-// reiniciar el servidor.
 export async function crearMensaje(input: NuevoMensajeInput): Promise<Mensaje> {
   const mensaje = await prisma.mensaje.create({
     data: {

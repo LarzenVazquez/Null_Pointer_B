@@ -14,7 +14,6 @@ export const SALAS_UPLOAD_DIR = path.join(
   SALAS_SUBDIR,
 );
 
-// Nos aseguramos de que el directorio de destino exista antes de recibir archivos.
 fs.mkdirSync(SALAS_UPLOAD_DIR, { recursive: true });
 
 const MIME_A_EXTENSION: Record<string, string> = {
@@ -59,16 +58,21 @@ export function construirUrlImagen(nombreArchivo: string): string {
   return `${env.UPLOADS_URL_PREFIX}/${SALAS_SUBDIR}/${nombreArchivo}`;
 }
 
-export function eliminarArchivoDeImagen(imagenUrl: string | null | undefined): void {
+export function eliminarArchivoDeImagen(
+  imagenUrl: string | null | undefined,
+): void {
   if (!imagenUrl) return;
-  if (!imagenUrl.startsWith(env.UPLOADS_URL_PREFIX)) return; // No es un archivo local gestionado por el backend.
+  if (!imagenUrl.startsWith(env.UPLOADS_URL_PREFIX)) return;
 
   const nombreArchivo = path.basename(imagenUrl);
   const rutaCompleta = path.join(SALAS_UPLOAD_DIR, nombreArchivo);
 
   fs.unlink(rutaCompleta, (err) => {
     if (err && err.code !== "ENOENT") {
-      console.error(`[uploads] No se pudo eliminar el archivo ${rutaCompleta}:`, err.message);
+      console.error(
+        `[uploads] No se pudo eliminar el archivo ${rutaCompleta}:`,
+        err.message,
+      );
     }
   });
 }

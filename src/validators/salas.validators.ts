@@ -4,27 +4,27 @@ export const idSalaParamSchema = z.object({
   id: z.string().trim().min(1, "El id de la sala es obligatorio"),
 });
 
-// Los formularios multipart/form-data envían todo como texto plano, así que
-// los siguientes helpers normalizan tipos (número/boolean/array) antes de validar.
-
-const equipoSchema = z.preprocess((val) => {
-  if (Array.isArray(val)) return val;
-  if (typeof val === "string") {
-    const texto = val.trim();
-    if (texto === "") return [];
-    try {
-      const parseado = JSON.parse(texto);
-      if (Array.isArray(parseado)) return parseado;
-    } catch {
-      // No era JSON: lo tratamos como lista separada por comas o saltos de línea.
+const equipoSchema = z.preprocess(
+  (val) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === "string") {
+      const texto = val.trim();
+      if (texto === "") return [];
+      try {
+        const parseado = JSON.parse(texto);
+        if (Array.isArray(parseado)) return parseado;
+      } catch {}
+      return texto
+        .split(/[,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
-    return texto
-      .split(/[,\n]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  return val;
-}, z.array(z.string().trim().min(1)).min(1, "Agrega al menos un elemento de equipo"));
+    return val;
+  },
+  z
+    .array(z.string().trim().min(1))
+    .min(1, "Agrega al menos un elemento de equipo"),
+);
 
 const booleanFlexible = z.preprocess((val) => {
   if (typeof val === "boolean") return val;
@@ -49,11 +49,18 @@ export const crearSalaSchema = z.object({
     .trim()
     .min(1)
     .max(40)
-    .regex(/^[a-zA-Z0-9_-]+$/, "El id solo puede contener letras, números, guiones y guiones bajos")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "El id solo puede contener letras, números, guiones y guiones bajos",
+    )
     .optional(),
   nombre: z.string().trim().min(2, "El nombre es obligatorio").max(80),
-  precio: numeroFlexible(z.number().int().min(0, "El precio no puede ser negativo")),
-  capacidad: numeroFlexible(z.number().int().min(1, "La capacidad debe ser al menos 1")),
+  precio: numeroFlexible(
+    z.number().int().min(0, "El precio no puede ser negativo"),
+  ),
+  capacidad: numeroFlexible(
+    z.number().int().min(1, "La capacidad debe ser al menos 1"),
+  ),
   m2: numeroFlexible(z.number().int().min(1, "Los m² deben ser al menos 1")),
   badge: badgeSchema,
   badgeLabel: z.string().trim().min(1).max(40),
@@ -65,9 +72,15 @@ export const crearSalaSchema = z.object({
 
 export const actualizarSalaSchema = z.object({
   nombre: z.string().trim().min(2).max(80).optional(),
-  precio: numeroFlexible(z.number().int().min(0, "El precio no puede ser negativo")).optional(),
-  capacidad: numeroFlexible(z.number().int().min(1, "La capacidad debe ser al menos 1")).optional(),
-  m2: numeroFlexible(z.number().int().min(1, "Los m² deben ser al menos 1")).optional(),
+  precio: numeroFlexible(
+    z.number().int().min(0, "El precio no puede ser negativo"),
+  ).optional(),
+  capacidad: numeroFlexible(
+    z.number().int().min(1, "La capacidad debe ser al menos 1"),
+  ).optional(),
+  m2: numeroFlexible(
+    z.number().int().min(1, "Los m² deben ser al menos 1"),
+  ).optional(),
   badge: badgeSchema.optional(),
   badgeLabel: z.string().trim().min(1).max(40).optional(),
   featured: booleanFlexible.optional(),

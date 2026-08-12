@@ -3,7 +3,6 @@ import { prisma } from "../lib/prisma";
 import { env } from "../config/env";
 import { ApiError } from "../utils/ApiError";
 import { firmarAccessToken } from "../utils/jwt.utils";
-import { calcularFingerprintPassword } from "../utils/passwordFingerprint.utils";
 import {
   generarRefreshToken,
   hashRefreshToken,
@@ -90,16 +89,6 @@ export async function registrarUsuario(datos: RegistroInput) {
     );
   }
 
-  const passwordFingerprint = calcularFingerprintPassword(datos.password);
-  const passwordRepetida = await prisma.usuario.findUnique({
-    where: { passwordFingerprint },
-  });
-  if (passwordRepetida) {
-    throw ApiError.conflicto(
-      "Esa contraseña ya está en uso por otra cuenta. Por seguridad, elige una contraseña diferente."
-    );
-  }
-
   const passwordHash = await bcrypt.hash(
     datos.password,
     env.BCRYPT_SALT_ROUNDS
@@ -111,7 +100,6 @@ export async function registrarUsuario(datos: RegistroInput) {
       email: datos.email,
       telefono: datos.telefono,
       passwordHash,
-      passwordFingerprint,
       roles: { create: { rolId: rolUsuario.id } },
     },
   });
@@ -142,23 +130,6 @@ export async function iniciarSesion(
     usuario.passwordHash
   );
   if (!passwordValido) throw credencialesInvalidas();
-
-  // Cuentas creadas antes de la restricción de unicidad todavía no tienen
-  // huella de contraseña; se calcula y guarda de forma perezosa en su
-  // primer login exitoso. Si por una coincidencia extremadamente rara ya
-  // existe otra cuenta con esa misma huella, se ignora en silencio: no debe
-  // impedir el login de un usuario legítimo.
-  if (!usuario.passwordFingerprint) {
-    const passwordFingerprint = calcularFingerprintPassword(datos.password);
-    try {
-      await prisma.usuario.update({
-        where: { id: usuario.id },
-        data: { passwordFingerprint },
-      });
-    } catch {
-      // Colisión con una cuenta existente: se deja sin huella por ahora.
-    }
-  }
 
   const { roles, permisos } = await obtenerRolesYPermisos(usuario.id);
 

@@ -43,8 +43,6 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
       roles: payload.roles,
       permisos: payload.permisos,
     };
-  } catch {
-    // Token inválido/expirado en un endpoint opcional: simplemente se ignora.
-  }
+  } catch {}
   next();
 }
