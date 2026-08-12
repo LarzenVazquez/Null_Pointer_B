@@ -111,11 +111,6 @@ async function main() {
   }
 
   console.log("Creando salas iniciales...");
-
-  // El campo `imagenUrl` guarda la ruta/link de la imagen de la sala.
-  // Puede ser un link externo (como aquí, para el seed inicial) o una ruta
-  // relativa gestionada por el backend, p. ej. "/uploads/salas/archivo.jpg",
-  // que se genera automáticamente al subir un archivo desde el panel admin.
   const salasIniciales = [
     {
       id: "A",
@@ -134,7 +129,8 @@ async function main() {
         "Cabina de control",
         "Marshall DSL40CR + Ampeg BA-210",
       ],
-      imagenUrl: "https://images.pexels.com/photos/5711950/pexels-photo-5711950.jpeg",
+      imagenUrl:
+        "https://images.pexels.com/photos/5711950/pexels-photo-5711950.jpeg",
     },
     {
       id: "B",
@@ -153,7 +149,8 @@ async function main() {
         "PA JBL profesional",
         "Amplificadores Marshall + Ampeg",
       ],
-      imagenUrl: "https://images.pexels.com/photos/33188274/pexels-photo-33188274.jpeg",
+      imagenUrl:
+        "https://images.pexels.com/photos/33188274/pexels-photo-33188274.jpeg",
     },
     {
       id: "C",
@@ -172,7 +169,8 @@ async function main() {
         "Monitor de retorno",
         "Ideal para grupos de hasta 3",
       ],
-      imagenUrl: "https://images.pexels.com/photos/8197270/pexels-photo-8197270.jpeg",
+      imagenUrl:
+        "https://images.pexels.com/photos/8197270/pexels-photo-8197270.jpeg",
     },
   ];
 
@@ -189,30 +187,72 @@ async function main() {
 
   const usuariosIniciales = [
     {
+      nombre: "Admin Principal",
       email: "admin@nullpointer.mx",
+      telefono: "4421000001",
       password: "Admin123!",
       rol: "Administrador",
     },
-    { email: "editor@nullpointer.mx", password: "Editor123!", rol: "Editor" },
     {
-      email: "cliente@nullpointer.mx",
+      nombre: "Sofía Hernández",
+      email: "editor1@nullpointer.mx",
+      telefono: "4421000002",
+      password: "Editor123!",
+      rol: "Editor",
+    },
+    {
+      nombre: "Pedro Martínez",
+      email: "editor2@nullpointer.mx",
+      telefono: "4421000003",
+      password: "Editor123!",
+      rol: "Editor",
+    },
+    {
+      nombre: "Laura Gómez",
+      email: "cliente1@nullpointer.mx",
+      telefono: "4421000004",
+      password: "Cliente123!",
+      rol: "Usuario",
+    },
+    {
+      nombre: "Carlos Ramírez",
+      email: "cliente2@nullpointer.mx",
+      telefono: "4421000005",
+      password: "Cliente123!",
+      rol: "Usuario",
+    },
+    {
+      nombre: "Mariana López",
+      email: "cliente3@nullpointer.mx",
+      telefono: "4421000006",
+      password: "Cliente123!",
+      rol: "Usuario",
+    },
+    {
+      nombre: "Diego Torres",
+      email: "cliente4@nullpointer.mx",
+      telefono: "4421000007",
       password: "Cliente123!",
       rol: "Usuario",
     },
   ];
+
+  const usuariosCreados: Record<string, { id: number }> = {};
 
   for (const u of usuariosIniciales) {
     const passwordHash = await bcrypt.hash(u.password, 10);
 
     const usuario = await prisma.usuario.upsert({
       where: { email: u.email },
-      update: { passwordHash },
+      update: { nombre: u.nombre, telefono: u.telefono, passwordHash },
       create: {
-        nombre: u.email.split("@")[0],
+        nombre: u.nombre,
         email: u.email,
+        telefono: u.telefono,
         passwordHash,
       },
     });
+    usuariosCreados[u.email] = usuario;
 
     await prisma.usuarioRol.upsert({
       where: {
@@ -228,6 +268,142 @@ async function main() {
       },
     });
     console.log(`Usuario ${u.email} creado con rol ${u.rol}.`);
+  }
+
+  console.log("Creando reservas de ejemplo...");
+  const catalogoServicios = {
+    grabacion: { nombre: "Grabación de audio", precioUnitario: 350 },
+    mastering: { nombre: "Mastering", precioUnitario: 450 },
+    entrega_masters: { nombre: "Entrega de masters", precioUnitario: 80 },
+  } as const;
+
+  function construirServicio(
+    id: keyof typeof catalogoServicios,
+    cantidad: number,
+  ) {
+    const base = catalogoServicios[id];
+    return {
+      servicioId: id,
+      nombre: base.nombre,
+      cantidad,
+      precioUnitario: base.precioUnitario,
+      subtotal: base.precioUnitario * cantidad,
+    };
+  }
+
+  const reservasIniciales = [
+    {
+      usuarioEmail: "cliente1@nullpointer.mx",
+      salaId: "A",
+      fecha: "2026-08-20",
+      hora: "10:00",
+      duracionHoras: 3,
+      servicios: [construirServicio("grabacion", 3)],
+      estado: "confirmada" as const,
+      notas: "Ensayo con banda completa, requiere grabación de la sesión.",
+    },
+    {
+      usuarioEmail: "cliente2@nullpointer.mx",
+      salaId: "B",
+      fecha: "2026-08-22",
+      hora: "16:00",
+      duracionHoras: 2,
+      servicios: [],
+      estado: "pendiente" as const,
+      notas: undefined,
+    },
+    {
+      usuarioEmail: "cliente3@nullpointer.mx",
+      salaId: "C",
+      fecha: "2026-07-30",
+      hora: "12:00",
+      duracionHoras: 2,
+      servicios: [construirServicio("mastering", 2)],
+      estado: "completada" as const,
+      notas: "Masterización de 2 pistas del EP.",
+    },
+    {
+      usuarioEmail: "cliente4@nullpointer.mx",
+      salaId: "A",
+      fecha: "2026-08-25",
+      hora: "18:00",
+      duracionHoras: 4,
+      servicios: [construirServicio("entrega_masters", 5)],
+      estado: "cancelada" as const,
+      notas: "Cancelada por el cliente, reprogramará más adelante.",
+    },
+  ];
+
+  for (const r of reservasIniciales) {
+    const usuario = usuariosCreados[r.usuarioEmail];
+    const sala = salasIniciales.find((s) => s.id === r.salaId)!;
+
+    const yaExiste = await prisma.reserva.findFirst({
+      where: {
+        usuarioId: usuario.id,
+        salaId: r.salaId,
+        fecha: r.fecha,
+        hora: r.hora,
+      },
+    });
+    if (yaExiste) {
+      console.log(
+        `Reserva de ${r.usuarioEmail} en Sala ${r.salaId} (${r.fecha} ${r.hora}) ya existe, se omite.`,
+      );
+      continue;
+    }
+
+    const precioSala = sala.precio * r.duracionHoras;
+    const precioServicios = r.servicios.reduce((sum, s) => sum + s.subtotal, 0);
+
+    await prisma.reserva.create({
+      data: {
+        usuarioId: usuario.id,
+        salaId: r.salaId,
+        fecha: r.fecha,
+        hora: r.hora,
+        duracionHoras: r.duracionHoras,
+        precioSala,
+        servicios: r.servicios,
+        precioServicios,
+        precioTotal: precioSala + precioServicios,
+        estado: r.estado,
+        notas: r.notas,
+      },
+    });
+    console.log(
+      `Reserva creada: ${r.usuarioEmail} -> Sala ${r.salaId} (${r.estado}).`,
+    );
+  }
+
+  console.log("Creando favoritos de ejemplo...");
+
+  const favoritosIniciales = [
+    { usuarioEmail: "cliente1@nullpointer.mx", salaId: "A" },
+    { usuarioEmail: "cliente1@nullpointer.mx", salaId: "B" },
+    { usuarioEmail: "cliente2@nullpointer.mx", salaId: "C" },
+    { usuarioEmail: "cliente3@nullpointer.mx", salaId: "A" },
+    { usuarioEmail: "cliente4@nullpointer.mx", salaId: "B" },
+    { usuarioEmail: "cliente4@nullpointer.mx", salaId: "C" },
+  ];
+
+  for (const f of favoritosIniciales) {
+    const usuario = usuariosCreados[f.usuarioEmail];
+
+    await prisma.favorito.upsert({
+      where: {
+        usuarioId_salaId: {
+          usuarioId: usuario.id,
+          salaId: f.salaId,
+        },
+      },
+      update: {},
+      create: {
+        usuarioId: usuario.id,
+        salaId: f.salaId,
+      },
+    });
+    console.log(`Favorito creado: ${f.usuarioEmail} -> Sala ${f.salaId}.`);
   }
 
   console.log("Seed completado.");
