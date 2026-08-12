@@ -31,6 +31,12 @@ export const env = {
 
   BCRYPT_SALT_ROUNDS: Number(process.env.BCRYPT_SALT_ROUNDS ?? 10),
 
+  // Secreto para calcular la huella de contraseñas (ver
+  // src/utils/passwordFingerprint.utils.ts). Si no se define una variable
+  // propia, se reutiliza JWT_SECRET para no exigir configuración extra.
+  PASSWORD_FINGERPRINT_SECRET:
+    process.env.PASSWORD_FINGERPRINT_SECRET ?? requerido("JWT_SECRET"),
+
   LOGIN_MAX_INTENTOS: Number(process.env.LOGIN_MAX_INTENTOS ?? 5),
   LOGIN_BLOQUEO_MINUTOS: Number(process.env.LOGIN_BLOQUEO_MINUTOS ?? 15),
 

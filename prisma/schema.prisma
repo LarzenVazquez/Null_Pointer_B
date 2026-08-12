@@ -7,19 +7,24 @@ datasource db {
 }
 
 model Usuario {
-  id           Int      @id @default(autoincrement())
-  nombre       String
-  email        String   @unique
-  telefono     String?
-  passwordHash String   @map("password_hash")
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                   Int      @id @default(autoincrement())
+  nombre               String
+  email                String   @unique
+  telefono             String?
+  passwordHash         String   @map("password_hash")
+  // Huella determinística (HMAC) de la contraseña en texto plano, usada
+  // únicamente para impedir que dos cuentas compartan la misma contraseña.
+  // No permite recuperar la contraseña original.
+  passwordFingerprint  String?  @unique @map("password_fingerprint")
+  activo               Boolean  @default(true)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
   roles     UsuarioRol[]
   sesiones  Sesion[]
   reservas  Reserva[]
   favoritos Favorito[]
+  mensajes  Mensaje[]
 
   @@map("usuarios")
 }
@@ -85,6 +90,36 @@ model Favorito {
 
   @@id([usuarioId, salaId])
   @@map("favoritos")
+}
+
+enum OrigenMensaje {
+  contacto
+  soporte
+
+  @@map("origen_mensaje")
+}
+
+enum EstadoMensaje {
+  nuevo
+  respondido
+
+  @@map("estado_mensaje")
+}
+
+model Mensaje {
+  id        String        @id @default(uuid())
+  nombre    String
+  email     String
+  asunto    String
+  mensaje   String
+  origen    OrigenMensaje
+  usuarioId Int?          @map("usuario_id")
+  estado    EstadoMensaje @default(nuevo)
+  creadoEn  DateTime      @default(now()) @map("creado_en")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@map("mensajes")
 }
 
 model Rol {

@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcrypt";
+import { calcularFingerprintPassword } from "../src/utils/passwordFingerprint.utils";
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
@@ -184,7 +185,6 @@ async function main() {
   console.log(`${salasIniciales.length} salas creadas/actualizadas.`);
 
   console.log("Creando usuarios iniciales...");
-
   const usuariosIniciales = [
     {
       nombre: "Admin Principal",
@@ -204,7 +204,7 @@ async function main() {
       nombre: "Pedro Martínez",
       email: "editor2@nullpointer.mx",
       telefono: "4421000003",
-      password: "Editor123!",
+      password: "Editor456!",
       rol: "Editor",
     },
     {
@@ -218,38 +218,52 @@ async function main() {
       nombre: "Carlos Ramírez",
       email: "cliente2@nullpointer.mx",
       telefono: "4421000005",
-      password: "Cliente123!",
+      password: "Cliente456!",
       rol: "Usuario",
     },
     {
       nombre: "Mariana López",
       email: "cliente3@nullpointer.mx",
       telefono: "4421000006",
-      password: "Cliente123!",
+      password: "Cliente789!",
       rol: "Usuario",
     },
     {
       nombre: "Diego Torres",
       email: "cliente4@nullpointer.mx",
       telefono: "4421000007",
-      password: "Cliente123!",
+      password: "Cliente321!",
       rol: "Usuario",
     },
   ];
+
+  const passwordsUnicas = new Set(usuariosIniciales.map((u) => u.password));
+  if (passwordsUnicas.size !== usuariosIniciales.length) {
+    throw new Error(
+      "El seed tiene contraseñas repetidas entre usuarios; cada cuenta debe tener una contraseña distinta.",
+    );
+  }
 
   const usuariosCreados: Record<string, { id: number }> = {};
 
   for (const u of usuariosIniciales) {
     const passwordHash = await bcrypt.hash(u.password, 10);
+    const passwordFingerprint = calcularFingerprintPassword(u.password);
 
     const usuario = await prisma.usuario.upsert({
       where: { email: u.email },
-      update: { nombre: u.nombre, telefono: u.telefono, passwordHash },
+      update: {
+        nombre: u.nombre,
+        telefono: u.telefono,
+        passwordHash,
+        passwordFingerprint,
+      },
       create: {
         nombre: u.nombre,
         email: u.email,
         telefono: u.telefono,
         passwordHash,
+        passwordFingerprint,
       },
     });
     usuariosCreados[u.email] = usuario;
@@ -404,6 +418,77 @@ async function main() {
       },
     });
     console.log(`Favorito creado: ${f.usuarioEmail} -> Sala ${f.salaId}.`);
+  }
+
+  console.log("Creando mensajes de ejemplo...");
+  const mensajesIniciales = [
+    {
+      nombre: "Ana Pérez",
+      email: "ana.perez@example.com",
+      asunto: "Disponibilidad Sala A para banda",
+      mensaje:
+        "Hola, ¿tienen disponibilidad de la Sala A para ensayar los sábados por la tarde?",
+      origen: "contacto" as const,
+      usuarioEmail: undefined as string | undefined,
+      estado: "nuevo" as const,
+    },
+    {
+      nombre: "Roberto Díaz",
+      email: "roberto.diaz@example.com",
+      asunto: "Cotización para evento corporativo",
+      mensaje:
+        "Buenas, quisiera una cotización para rentar una sala completa para un evento de una tarde.",
+      origen: "contacto" as const,
+      usuarioEmail: undefined as string | undefined,
+      estado: "respondido" as const,
+    },
+    {
+      nombre: "Laura Gómez",
+      email: "cliente1@nullpointer.mx",
+      asunto: "Problema al pagar mi reserva",
+      mensaje:
+        "No me deja completar el pago de mi reserva en la Sala A, ¿me pueden ayudar?",
+      origen: "soporte" as const,
+      usuarioEmail: "cliente1@nullpointer.mx",
+      estado: "nuevo" as const,
+    },
+    {
+      nombre: "Carlos Ramírez",
+      email: "cliente2@nullpointer.mx",
+      asunto: "Cambio de horario de mi reserva",
+      mensaje:
+        "Necesito mover mi reserva del 22 de agosto dos horas más tarde, ¿es posible?",
+      origen: "soporte" as const,
+      usuarioEmail: "cliente2@nullpointer.mx",
+      estado: "respondido" as const,
+    },
+  ];
+
+  for (const m of mensajesIniciales) {
+    const usuario = m.usuarioEmail
+      ? usuariosCreados[m.usuarioEmail]
+      : undefined;
+
+    const yaExiste = await prisma.mensaje.findFirst({
+      where: { email: m.email, asunto: m.asunto },
+    });
+    if (yaExiste) {
+      console.log(`Mensaje de ${m.email} ("${m.asunto}") ya existe, se omite.`);
+      continue;
+    }
+
+    await prisma.mensaje.create({
+      data: {
+        nombre: m.nombre,
+        email: m.email,
+        asunto: m.asunto,
+        mensaje: m.mensaje,
+        origen: m.origen,
+        usuarioId: usuario?.id,
+        estado: m.estado,
+      },
+    });
+    console.log(`Mensaje creado: ${m.email} -> "${m.asunto}" (${m.origen}).`);
   }
 
   console.log("Seed completado.");

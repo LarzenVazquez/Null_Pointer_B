@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma";
 import { env } from "../config/env";
 import { ApiError } from "../utils/ApiError";
 import { indexUsuario, removeUsuarioDelIndice } from "./search.service";
+import { calcularFingerprintPassword } from "../utils/passwordFingerprint.utils";
 
 function serializar(usuario: any) {
   return {
@@ -52,6 +53,16 @@ export async function crearUsuarioComoAdmin(datos: {
   const rol = await prisma.rol.findUnique({ where: { nombre: datos.rol } });
   if (!rol) throw ApiError.badRequest("El rol indicado no existe");
 
+  const passwordFingerprint = calcularFingerprintPassword(datos.password);
+  const passwordRepetida = await prisma.usuario.findUnique({
+    where: { passwordFingerprint },
+  });
+  if (passwordRepetida) {
+    throw ApiError.conflicto(
+      "Esa contraseña ya está en uso por otra cuenta. Por seguridad, elige una contraseña diferente.",
+    );
+  }
+
   const passwordHash = await bcrypt.hash(
     datos.password,
     env.BCRYPT_SALT_ROUNDS,
@@ -63,6 +74,7 @@ export async function crearUsuarioComoAdmin(datos: {
       email: datos.email,
       telefono: datos.telefono,
       passwordHash,
+      passwordFingerprint,
       roles: { create: { rolId: rol.id } },
     },
     include: includeRoles,

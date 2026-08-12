@@ -7,7 +7,7 @@ import { MensajeOrigen } from "../services/mensajes.service";
 export const crear = asyncHandler(async (req: Request, res: Response) => {
   const { nombre, email, asunto, mensaje, origen } = req.body;
 
-  const nuevo = mensajesService.crearMensaje({
+  const nuevo = await mensajesService.crearMensaje({
     nombre,
     email,
     asunto,
@@ -29,7 +29,7 @@ export const listar = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
-  const lista = mensajesService.listarMensajes(origen);
+  const lista = await mensajesService.listarMensajes(origen);
   res.status(200).json({ ok: true, mensajes: lista });
 });
 
@@ -37,7 +37,7 @@ export const marcarRespondido = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const actualizado = mensajesService.marcarComoRespondido(id);
+    const actualizado = await mensajesService.marcarComoRespondido(id);
     if (!actualizado) {
       throw ApiError.noEncontrado(`No existe un mensaje con id '${id}'`);
     }
