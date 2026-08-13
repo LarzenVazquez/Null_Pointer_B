@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -343,7 +344,6 @@ async function main() {
 
     const yaExiste = await prisma.reserva.findFirst({
       where: {
-        usuarioId: usuario.id,
         salaId: r.salaId,
         fecha: r.fecha,
         hora: r.hora,
@@ -351,7 +351,7 @@ async function main() {
     });
     if (yaExiste) {
       console.log(
-        `Reserva de ${r.usuarioEmail} en Sala ${r.salaId} (${r.fecha} ${r.hora}) ya existe, se omite.`,
+        `Sala ${r.salaId} (${r.fecha} ${r.hora}) ya tiene una reserva, se omite (${r.usuarioEmail}).`,
       );
       continue;
     }
