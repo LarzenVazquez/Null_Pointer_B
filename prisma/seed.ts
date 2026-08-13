@@ -208,30 +208,30 @@ async function main() {
     },
     {
       nombre: "Laura Gómez",
-      email: "cliente1@nullpointer.mx",
+      email: "Lau_Gomez88@gmail.com",
       telefono: "4421000004",
-      password: "Cliente123!",
+      password: "Laura88Go",
       rol: "Usuario",
     },
     {
       nombre: "Carlos Ramírez",
-      email: "cliente2@nullpointer.mx",
+      email: "Carlos_Ram22@gmail.com",
       telefono: "4421000005",
-      password: "Cliente456!",
+      password: "Carlos22Rz",
       rol: "Usuario",
     },
     {
       nombre: "Mariana López",
-      email: "cliente3@nullpointer.mx",
+      email: "Mari_Lopez07@gmail.com",
       telefono: "4421000006",
-      password: "Cliente789!",
+      password: "Mariana07Lp",
       rol: "Usuario",
     },
     {
       nombre: "Diego Torres",
-      email: "cliente4@nullpointer.mx",
+      email: "Diego_Torres95@gmail.com",
       telefono: "4421000007",
-      password: "Cliente321!",
+      password: "Diego95Tr",
       rol: "Usuario",
     },
   ];
@@ -296,7 +296,7 @@ async function main() {
 
   const reservasIniciales = [
     {
-      usuarioEmail: "cliente1@nullpointer.mx",
+      usuarioEmail: "Lau_Gomez88@gmail.com",
       salaId: "A",
       fecha: "2026-08-20",
       hora: "10:00",
@@ -306,7 +306,7 @@ async function main() {
       notas: "Ensayo con banda completa, requiere grabación de la sesión.",
     },
     {
-      usuarioEmail: "cliente2@nullpointer.mx",
+      usuarioEmail: "Carlos_Ram22@gmail.com",
       salaId: "B",
       fecha: "2026-08-22",
       hora: "16:00",
@@ -316,7 +316,7 @@ async function main() {
       notas: undefined,
     },
     {
-      usuarioEmail: "cliente3@nullpointer.mx",
+      usuarioEmail: "Mari_Lopez07@gmail.com",
       salaId: "C",
       fecha: "2026-07-30",
       hora: "12:00",
@@ -326,7 +326,7 @@ async function main() {
       notas: "Masterización de 2 pistas del EP.",
     },
     {
-      usuarioEmail: "cliente4@nullpointer.mx",
+      usuarioEmail: "Diego_Torres95@gmail.com",
       salaId: "A",
       fecha: "2026-08-25",
       hora: "18:00",
@@ -382,12 +382,12 @@ async function main() {
   console.log("Creando favoritos de ejemplo...");
 
   const favoritosIniciales = [
-    { usuarioEmail: "cliente1@nullpointer.mx", salaId: "A" },
-    { usuarioEmail: "cliente1@nullpointer.mx", salaId: "B" },
-    { usuarioEmail: "cliente2@nullpointer.mx", salaId: "C" },
-    { usuarioEmail: "cliente3@nullpointer.mx", salaId: "A" },
-    { usuarioEmail: "cliente4@nullpointer.mx", salaId: "B" },
-    { usuarioEmail: "cliente4@nullpointer.mx", salaId: "C" },
+    { usuarioEmail: "Lau_Gomez88@gmail.com", salaId: "A" },
+    { usuarioEmail: "Lau_Gomez88@gmail.com", salaId: "B" },
+    { usuarioEmail: "Carlos_Ram22@gmail.com", salaId: "C" },
+    { usuarioEmail: "Mari_Lopez07@gmail.com", salaId: "A" },
+    { usuarioEmail: "Diego_Torres95@gmail.com", salaId: "B" },
+    { usuarioEmail: "Diego_Torres95@gmail.com", salaId: "C" },
   ];
 
   for (const f of favoritosIniciales) {
@@ -433,22 +433,22 @@ async function main() {
     },
     {
       nombre: "Laura Gómez",
-      email: "cliente1@nullpointer.mx",
+      email: "Lau_Gomez88@gmail.com",
       asunto: "Problema al pagar mi reserva",
       mensaje:
         "No me deja completar el pago de mi reserva en la Sala A, ¿me pueden ayudar?",
       origen: "soporte" as const,
-      usuarioEmail: "cliente1@nullpointer.mx",
+      usuarioEmail: "Lau_Gomez88@gmail.com",
       estado: "nuevo" as const,
     },
     {
       nombre: "Carlos Ramírez",
-      email: "cliente2@nullpointer.mx",
+      email: "Carlos_Ram22@gmail.com",
       asunto: "Cambio de horario de mi reserva",
       mensaje:
         "Necesito mover mi reserva del 22 de agosto dos horas más tarde, ¿es posible?",
       origen: "soporte" as const,
-      usuarioEmail: "cliente2@nullpointer.mx",
+      usuarioEmail: "Carlos_Ram22@gmail.com",
       estado: "respondido" as const,
     },
   ];
