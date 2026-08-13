@@ -209,28 +209,28 @@ async function main() {
     },
     {
       nombre: "Laura Gómez",
-      email: "Lau_Gomez88@gmail.com",
+      email: "lau_gomez88@gmail.com",
       telefono: "4421000004",
       password: "Laura88Go",
       rol: "Usuario",
     },
     {
       nombre: "Carlos Ramírez",
-      email: "Carlos_Ram22@gmail.com",
+      email: "carlos_ram22@gmail.com",
       telefono: "4421000005",
       password: "Carlos22Rz",
       rol: "Usuario",
     },
     {
       nombre: "Mariana López",
-      email: "Mari_Lopez07@gmail.com",
+      email: "mari_lopez07@gmail.com",
       telefono: "4421000006",
       password: "Mariana07Lp",
       rol: "Usuario",
     },
     {
       nombre: "Diego Torres",
-      email: "Diego_Torres95@gmail.com",
+      email: "diego_torres95@gmail.com",
       telefono: "4421000007",
       password: "Diego95Tr",
       rol: "Usuario",
@@ -297,7 +297,7 @@ async function main() {
 
   const reservasIniciales = [
     {
-      usuarioEmail: "Lau_Gomez88@gmail.com",
+      usuarioEmail: "lau_gomez88@gmail.com",
       salaId: "A",
       fecha: "2026-08-20",
       hora: "10:00",
@@ -307,7 +307,7 @@ async function main() {
       notas: "Ensayo con banda completa, requiere grabación de la sesión.",
     },
     {
-      usuarioEmail: "Carlos_Ram22@gmail.com",
+      usuarioEmail: "carlos_ram22@gmail.com",
       salaId: "B",
       fecha: "2026-08-22",
       hora: "16:00",
@@ -317,7 +317,7 @@ async function main() {
       notas: undefined,
     },
     {
-      usuarioEmail: "Mari_Lopez07@gmail.com",
+      usuarioEmail: "mari_lopez07@gmail.com",
       salaId: "C",
       fecha: "2026-07-30",
       hora: "12:00",
@@ -327,7 +327,7 @@ async function main() {
       notas: "Masterización de 2 pistas del EP.",
     },
     {
-      usuarioEmail: "Diego_Torres95@gmail.com",
+      usuarioEmail: "diego_torres95@gmail.com",
       salaId: "A",
       fecha: "2026-08-25",
       hora: "18:00",
@@ -382,12 +382,12 @@ async function main() {
   console.log("Creando favoritos de ejemplo...");
 
   const favoritosIniciales = [
-    { usuarioEmail: "Lau_Gomez88@gmail.com", salaId: "A" },
-    { usuarioEmail: "Lau_Gomez88@gmail.com", salaId: "B" },
-    { usuarioEmail: "Carlos_Ram22@gmail.com", salaId: "C" },
-    { usuarioEmail: "Mari_Lopez07@gmail.com", salaId: "A" },
-    { usuarioEmail: "Diego_Torres95@gmail.com", salaId: "B" },
-    { usuarioEmail: "Diego_Torres95@gmail.com", salaId: "C" },
+    { usuarioEmail: "lau_gomez88@gmail.com", salaId: "A" },
+    { usuarioEmail: "lau_gomez88@gmail.com", salaId: "B" },
+    { usuarioEmail: "carlos_ram22@gmail.com", salaId: "C" },
+    { usuarioEmail: "mari_lopez07@gmail.com", salaId: "A" },
+    { usuarioEmail: "diego_torres95@gmail.com", salaId: "B" },
+    { usuarioEmail: "diego_torres95@gmail.com", salaId: "C" },
   ];
 
   for (const f of favoritosIniciales) {
@@ -433,22 +433,22 @@ async function main() {
     },
     {
       nombre: "Laura Gómez",
-      email: "Lau_Gomez88@gmail.com",
+      email: "lau_gomez88@gmail.com",
       asunto: "Problema al pagar mi reserva",
       mensaje:
         "No me deja completar el pago de mi reserva en la Sala A, ¿me pueden ayudar?",
       origen: "soporte" as const,
-      usuarioEmail: "Lau_Gomez88@gmail.com",
+      usuarioEmail: "lau_gomez88@gmail.com",
       estado: "nuevo" as const,
     },
     {
       nombre: "Carlos Ramírez",
-      email: "Carlos_Ram22@gmail.com",
+      email: "carlos_ram22@gmail.com",
       asunto: "Cambio de horario de mi reserva",
       mensaje:
         "Necesito mover mi reserva del 22 de agosto dos horas más tarde, ¿es posible?",
       origen: "soporte" as const,
-      usuarioEmail: "Carlos_Ram22@gmail.com",
+      usuarioEmail: "carlos_ram22@gmail.com",
       estado: "respondido" as const,
     },
   ];
