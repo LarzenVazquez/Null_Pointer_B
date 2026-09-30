@@ -6,3 +6,6 @@ dist/
 # Archivos subidos por usuarios (imágenes de salas, etc.) — no se versionan.
 # El directorio se crea automáticamente al iniciar el servidor.
 uploads/
+
+# Credenciales de Firebase (nunca se versionan)
+firebase-service-account*.json

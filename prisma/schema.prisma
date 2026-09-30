@@ -22,6 +22,10 @@ model Usuario {
   favoritos Favorito[]
   mensajes  Mensaje[]
 
+  dispositivosWearable DispWearable[]
+  vinculacionesWearable VinculacionWearable[]
+  notificaciones       Notificacion[]
+
   @@map("usuarios")
 }
 
@@ -69,6 +73,9 @@ model Reserva {
   estado          EstadoReserva @default(confirmada)
   notas           String?
   creadoEn        DateTime      @default(now()) @map("creado_en")
+
+  // Evita que el recordatorio automático se envíe más de una vez.
+  recordatorioEnviado Boolean   @default(false) @map("recordatorio_enviado")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   sala    Sala    @relation(fields: [salaId], references: [id], onDelete: Cascade)
@@ -177,4 +184,77 @@ model Sesion {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("sesiones")
+}
+
+// ───────────────────────────────────────────────────────────────
+//  Null Pointer Wear — dispositivos wearable y notificaciones
+// ───────────────────────────────────────────────────────────────
+
+enum TipoNotificacion {
+  reserva_confirmada
+  reserva_cancelada
+  recordatorio_reserva
+  cambio_sala_favorita
+
+  @@map("tipo_notificacion")
+}
+
+// Reloj vinculado a la cuenta de un Usuario.
+// - tokenHash: credencial propia del reloj (se guarda solo el hash SHA-256).
+// - fcmToken: token de Firebase Cloud Messaging para enviar notificaciones push.
+model DispWearable {
+  id           Int       @id @default(autoincrement())
+  usuarioId    Int       @map("usuario_id")
+  nombre       String
+  modelo       String?
+  plataforma   String    @default("wear_os")
+  tokenHash    String    @unique @map("token_hash")
+  fcmToken     String?   @unique @map("fcm_token")
+  activo       Boolean   @default(true)
+  ultimoAcceso DateTime? @map("ultimo_acceso")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("disp_wearables")
+}
+
+// Código temporal de vinculación (flujo tipo "device code"):
+// el reloj muestra un código de 6 dígitos y el Usuario lo confirma desde la web.
+model VinculacionWearable {
+  id             String    @id @default(uuid())
+  codigo         String
+  deviceCodeHash String    @unique @map("device_code_hash")
+  nombre         String
+  modelo         String?
+  usuarioId      Int?      @map("usuario_id")
+  confirmadaEn   DateTime? @map("confirmada_en")
+  consumida      Boolean   @default(false)
+  expiraEn       DateTime  @map("expira_en")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([codigo])
+  @@map("vinculaciones_wearable")
+}
+
+// Historial de avisos. El reloj los consulta (y los recibe por push si FCM está configurado).
+model Notificacion {
+  id          String           @id @default(uuid())
+  usuarioId   Int              @map("usuario_id")
+  tipo        TipoNotificacion
+  titulo      String
+  cuerpo      String
+  datos       Json?
+  leida       Boolean          @default(false)
+  enviadaPush Boolean          @default(false) @map("enviada_push")
+  creadoEn    DateTime         @default(now()) @map("creado_en")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, creadoEn])
+  @@map("notificaciones")
 }

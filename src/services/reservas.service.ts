@@ -1,5 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
+import {
+  enSegundoPlano,
+  notificarReservaCancelada,
+  notificarReservaConfirmada,
+} from "./notificaciones.service";
 
 export interface ServicioSeleccionadoInput {
   servicioId: string;
@@ -143,7 +148,10 @@ export async function crearReserva(input: NuevaReservaInput) {
       include: includeSala,
     });
 
-    return serializar(reserva);
+    const serializada = serializar(reserva);
+    // Wear: la reserva nace confirmada -> aviso al reloj.
+    enSegundoPlano(notificarReservaConfirmada(serializada), "reserva creada");
+    return serializada;
   } catch (err: any) {
     if (err?.code === "P2002") {
       throw ApiError.conflicto(
@@ -158,15 +166,35 @@ export async function actualizarEstado(
   id: string,
   estado: "pendiente" | "confirmada" | "completada" | "cancelada",
 ) {
-  await getReservaById(id);
+  const anterior = await getReservaById(id);
 
   const reserva = await prisma.reserva.update({
     where: { id },
-    data: { estado },
+    data: {
+      estado,
+      // Si vuelve a confirmarse, se permite un nuevo recordatorio.
+      ...(estado === "confirmada" && anterior.estado !== "confirmada"
+        ? { recordatorioEnviado: false }
+        : {}),
+    },
     include: includeSala,
   });
 
-  return serializar(reserva);
+  const serializada = serializar(reserva);
+
+  // Wear: solo avisamos si el estado realmente cambió.
+  if (anterior.estado !== estado) {
+    if (estado === "confirmada") {
+      enSegundoPlano(notificarReservaConfirmada(serializada), "reserva confirmada");
+    } else if (estado === "cancelada") {
+      enSegundoPlano(
+        notificarReservaCancelada(serializada, { porElUsuario: false }),
+        "reserva cancelada (staff)",
+      );
+    }
+  }
+
+  return serializada;
 }
 
 export async function cancelarReserva(id: string, usuarioId?: number) {
@@ -178,11 +206,21 @@ export async function cancelarReserva(id: string, usuarioId?: number) {
     throw ApiError.prohibido("No puedes cancelar una reserva que no es tuya.");
   }
 
+  const yaEstabaCancelada = existente.estado === "cancelada";
+
   const reserva = await prisma.reserva.update({
     where: { id },
     data: { estado: "cancelada" },
     include: includeSala,
   });
 
-  return serializar(reserva);
+  const serializada = serializar(reserva);
+  if (!yaEstabaCancelada) {
+    // usuarioId definido = la canceló el propio Usuario; undefined = la canceló un Administrador.
+    enSegundoPlano(
+      notificarReservaCancelada(serializada, { porElUsuario: usuarioId !== undefined }),
+      "reserva cancelada",
+    );
+  }
+  return serializada;
 }

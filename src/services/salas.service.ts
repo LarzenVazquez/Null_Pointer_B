@@ -1,6 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { eliminarArchivoDeImagen } from "../middlewares/upload.middleware";
+import {
+  enSegundoPlano,
+  notificarCambioSalaFavorita,
+} from "./notificaciones.service";
 import type {
   CrearSalaInput,
   ActualizarSalaInput,
@@ -128,7 +132,42 @@ export async function actualizarSala(
     },
   });
 
+  // Wear: avisar a quienes tienen esta sala en favoritos si cambió algo relevante.
+  const cambiosRelevantes = describirCambios(salaActual, sala);
+  if (cambiosRelevantes.length) {
+    enSegundoPlano(
+      notificarCambioSalaFavorita({
+        salaId: sala.id,
+        salaNombre: sala.nombre,
+        cambios: cambiosRelevantes,
+      }),
+      "cambio en sala favorita",
+    );
+  }
+
   return serializar(sala);
+}
+
+/** Frases cortas (legibles en el reloj) con lo que cambió de una sala. */
+function describirCambios(
+  antes: { nombre: string; precio: number; capacidad: number; equipo: string[] },
+  despues: { nombre: string; precio: number; capacidad: number; equipo: string[] },
+): string[] {
+  const cambios: string[] = [];
+  if (antes.precio !== despues.precio) {
+    cambios.push(`Precio $${antes.precio} → $${despues.precio}/h`);
+  }
+  if (antes.capacidad !== despues.capacidad) {
+    cambios.push(`Capacidad ${antes.capacidad} → ${despues.capacidad} músicos`);
+  }
+  if (antes.nombre !== despues.nombre) {
+    cambios.push(`Ahora se llama "${despues.nombre}"`);
+  }
+  const agregado = despues.equipo.filter((e) => !antes.equipo.includes(e));
+  const quitado = antes.equipo.filter((e) => !despues.equipo.includes(e));
+  if (agregado.length) cambios.push(`Nuevo equipo: ${agregado.join(", ")}`);
+  if (quitado.length) cambios.push(`Ya no incluye: ${quitado.join(", ")}`);
+  return cambios;
 }
 
 export async function eliminarSala(id: string, forzar = false) {
@@ -150,8 +189,26 @@ export async function eliminarSala(id: string, forzar = false) {
     }
   }
 
+  // Wear: guardamos quién la tenía en favoritos ANTES de borrar (el borrado es en cascada).
+  const favoritosPrevios = await prisma.favorito.findMany({
+    where: { salaId: id },
+    select: { usuarioId: true },
+  });
+
   await prisma.sala.delete({ where: { id } });
   eliminarArchivoDeImagen(sala.imagenUrl);
+
+  if (favoritosPrevios.length) {
+    enSegundoPlano(
+      notificarCambioSalaFavorita({
+        salaId: id,
+        salaNombre: sala.nombre,
+        cambios: ["Ya no está disponible"],
+        usuarioIds: favoritosPrevios.map((f) => f.usuarioId),
+      }),
+      "sala favorita eliminada",
+    );
+  }
 
   return { id };
 }

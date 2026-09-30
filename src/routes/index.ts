@@ -9,6 +9,8 @@ import mensajesRoutes from "./mensajes.routes";
 import salasRoutes from "./salas.routes";
 import reservasRoutes from "./reservas.routes";
 import favoritosRoutes from "./favoritos.routes";
+import wearableRoutes from "./wearable.routes";
+import notificacionesRoutes from "./notificaciones.routes";
 
 const router = Router();
 
@@ -26,6 +28,8 @@ router.use("/mensajes", mensajesRoutes);
 router.use("/salas", salasRoutes);
 router.use("/reservas", reservasRoutes);
 router.use("/favoritos", favoritosRoutes);
+router.use("/wearable", wearableRoutes);
+router.use("/notificaciones", notificacionesRoutes);
 router.use("/admin", searchRoutes);
 
 export default router;

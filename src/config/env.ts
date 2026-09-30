@@ -36,6 +36,20 @@ export const env = {
 
   ELASTICSEARCH_URL: requerido("ELASTICSEARCH_URL"),
 
+  // ── Null Pointer Wear ──────────────────────────────────────────
+  // Ruta al JSON de la cuenta de servicio de Firebase (opcional).
+  // Si no se define, las notificaciones se guardan en BD y el reloj
+  // las obtiene por consulta periódica (modo "polling").
+  FIREBASE_SERVICE_ACCOUNT_PATH: process.env.FIREBASE_SERVICE_ACCOUNT_PATH ?? "",
+  // Minutos de vigencia del código de vinculación que muestra el reloj.
+  VINCULACION_EXPIRA_MINUTOS: Number(process.env.VINCULACION_EXPIRA_MINUTOS ?? 10),
+  // Recordatorio automático: cuántos minutos antes avisar y cada cuánto revisar.
+  RECORDATORIO_MINUTOS_ANTES: Number(process.env.RECORDATORIO_MINUTOS_ANTES ?? 60),
+  RECORDATORIO_INTERVALO_SEGUNDOS: Number(process.env.RECORDATORIO_INTERVALO_SEGUNDOS ?? 60),
+  // Las reservas guardan fecha/hora como texto local; este offset las convierte a instante real.
+  // Querétaro no usa horario de verano desde 2022 → UTC-06:00.
+  ZONA_HORARIA_OFFSET: process.env.ZONA_HORARIA_OFFSET ?? "-06:00",
+
   get isProduction() {
     return this.NODE_ENV === "production";
   },

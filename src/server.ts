@@ -2,6 +2,8 @@ import { app } from "./app";
 import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
 import { asegurarIndices } from "./lib/elasticsearch";
+import { obtenerMessaging } from "./lib/firebase";
+import { detenerRecordatorios, iniciarRecordatorios } from "./jobs/recordatorios.job";
 
 async function main() {
   await prisma.$connect();
@@ -16,6 +18,10 @@ async function main() {
     );
   }
 
+  // Null Pointer Wear: push (opcional) + recordatorios automáticos
+  obtenerMessaging();
+  iniciarRecordatorios();
+
   const servidor = app.listen(env.PORT, () => {
     console.log(`[server] Escuchando en http://localhost:${env.PORT}`);
     console.log(`[server] Entorno: ${env.NODE_ENV}`);
@@ -24,6 +30,7 @@ async function main() {
 
   const apagar = async (señal: string) => {
     console.log(`\n[server] Señal ${señal} recibida, cerrando...`);
+    detenerRecordatorios();
     servidor.close(async () => {
       await prisma.$disconnect();
       console.log("[server] Cerrado correctamente");
