@@ -12,7 +12,9 @@ import {
 const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: env.isProduction,
-  sameSite: "lax",
+  // En producción el frontend (Vercel) y el backend (Render) están en dominios distintos:
+  // la cookie de refresh solo viaja entre sitios con SameSite=None + Secure.
+  sameSite: env.isProduction ? "none" : "lax",
   path: "/api/auth",
   maxAge: env.REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000,
 };

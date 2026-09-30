@@ -9,6 +9,9 @@ import { errorHandler, notFoundHandler } from "./middlewares/error.middleware";
 
 export const app = express();
 
+// Render pone un proxy delante: así req.ip es la IP real del visitante (limitador de intentos).
+app.set("trust proxy", 1);
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
