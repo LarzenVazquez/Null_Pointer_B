@@ -3,20 +3,49 @@ import { env } from "../config/env";
 import { fechaLocal, inicioDeReserva } from "../utils/fechas.utils";
 import { notificarRecordatorio } from "../services/notificaciones.service";
 
-/**
- * Tarea programada: revisa periódicamente las reservas confirmadas que empiezan
- * dentro de los próximos RECORDATORIO_MINUTOS_ANTES minutos y envía un recordatorio
- * (una sola vez por reserva gracias a `recordatorio_enviado`).
- */
 let temporizador: NodeJS.Timeout | null = null;
 let ejecutando = false;
 
-export async function revisarRecordatorios(ahora: Date = new Date()): Promise<number> {
-  if (ejecutando) return 0; // evita traslapes si una revisión tarda más que el intervalo
+export async function completarReservasTerminadas(
+  ahora: Date = new Date(),
+): Promise<number> {
+  const candidatas = await prisma.reserva.findMany({
+    where: { estado: "confirmada", fecha: { lte: fechaLocal(ahora) } },
+    select: { id: true, fecha: true, hora: true, duracionHoras: true },
+  });
+
+  const terminadas = candidatas
+    .filter(
+      (r) =>
+        inicioDeReserva(r.fecha, r.hora).getTime() +
+          r.duracionHoras * 3_600_000 <=
+        ahora.getTime(),
+    )
+    .map((r) => r.id);
+  if (!terminadas.length) return 0;
+
+  const { count } = await prisma.reserva.updateMany({
+    where: { id: { in: terminadas }, estado: "confirmada" },
+    data: { estado: "completada" },
+  });
+  if (count)
+    console.log(
+      `[reservas] ${count} reserva(s) marcada(s) como completada(s).`,
+    );
+  return count;
+}
+
+export async function revisarRecordatorios(
+  ahora: Date = new Date(),
+): Promise<number> {
+  if (ejecutando) return 0;
   ejecutando = true;
   try {
-    const limite = new Date(ahora.getTime() + env.RECORDATORIO_MINUTOS_ANTES * 60_000);
-    // Solo hoy y mañana (fecha local) para no traer toda la tabla.
+    await completarReservasTerminadas(ahora);
+
+    const limite = new Date(
+      ahora.getTime() + env.RECORDATORIO_MINUTOS_ANTES * 60_000,
+    );
     const fechas = Array.from(new Set([fechaLocal(ahora), fechaLocal(limite)]));
 
     const candidatas = await prisma.reserva.findMany({
@@ -33,7 +62,6 @@ export async function revisarRecordatorios(ahora: Date = new Date()): Promise<nu
       const inicio = inicioDeReserva(r.fecha, r.hora);
       if (inicio <= ahora || inicio > limite) continue;
 
-      // Reclamo atómico: si hay dos instancias del servidor, solo una envía.
       const reclamo = await prisma.reserva.updateMany({
         where: { id: r.id, recordatorioEnviado: false },
         data: { recordatorioEnviado: true },
@@ -55,7 +83,8 @@ export async function revisarRecordatorios(ahora: Date = new Date()): Promise<nu
       );
       enviados++;
     }
-    if (enviados) console.log(`[recordatorios] ${enviados} recordatorio(s) enviado(s).`);
+    if (enviados)
+      console.log(`[recordatorios] ${enviados} recordatorio(s) enviado(s).`);
     return enviados;
   } catch (err) {
     console.error("[recordatorios] Error al revisar reservas:", err);

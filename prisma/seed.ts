@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcrypt";
@@ -377,6 +377,183 @@ async function main() {
     console.log(
       `Reserva creada: ${r.usuarioEmail} -> Sala ${r.salaId} (${r.estado}).`,
     );
+  }
+
+  console.log("Creando reservas de prueba de hoy (23/10/2026)...");
+  const HOY = "2026-10-23";
+  const MANANA = "2026-10-24";
+
+  const reservasHoy = [
+    {
+      salaId: "A",
+      fecha: HOY,
+      hora: "19:00",
+      duracionHoras: 1,
+      estado: "confirmada" as const,
+    },
+    {
+      salaId: "B",
+      fecha: HOY,
+      hora: "20:00",
+      duracionHoras: 2,
+      estado: "confirmada" as const,
+    },
+    {
+      salaId: "C",
+      fecha: HOY,
+      hora: "20:00",
+      duracionHoras: 1,
+      estado: "cancelada" as const,
+    },
+    {
+      salaId: "C",
+      fecha: MANANA,
+      hora: "19:00",
+      duracionHoras: 2,
+      estado: "pendiente" as const,
+    },
+  ];
+
+  const laura = usuariosCreados["lau_gomez88@gmail.com"];
+  const meses = [
+    "ene",
+    "feb",
+    "mar",
+    "abr",
+    "may",
+    "jun",
+    "jul",
+    "ago",
+    "sep",
+    "oct",
+    "nov",
+    "dic",
+  ];
+  const fechaCorta = (f: string) => {
+    const [, m, d] = f.split("-").map(Number);
+    return `${d} ${meses[m - 1]}`;
+  };
+  const haceMinutos = (min: number) => new Date(Date.now() - min * 60_000);
+
+  const reservasHoyCreadas: {
+    id: string;
+    salaId: string;
+    salaNombre: string;
+    fecha: string;
+    hora: string;
+    duracionHoras: number;
+    estado: string;
+  }[] = [];
+
+  for (const r of reservasHoy) {
+    const sala = salasIniciales.find((s) => s.id === r.salaId)!;
+
+    let reserva = await prisma.reserva.findFirst({
+      where: {
+        usuarioId: laura.id,
+        salaId: r.salaId,
+        fecha: r.fecha,
+        hora: r.hora,
+      },
+    });
+
+    if (reserva) {
+      console.log(
+        `Reserva de prueba Sala ${r.salaId} (${r.fecha} ${r.hora}) ya existe, se omite.`,
+      );
+    } else {
+      const precioSala = sala.precio * r.duracionHoras;
+      reserva = await prisma.reserva.create({
+        data: {
+          usuarioId: laura.id,
+          salaId: r.salaId,
+          fecha: r.fecha,
+          hora: r.hora,
+          duracionHoras: r.duracionHoras,
+          precioSala,
+          servicios: [],
+          precioServicios: 0,
+          precioTotal: precioSala,
+          estado: r.estado,
+          notas: "Reserva de prueba para el reloj.",
+        },
+      });
+      console.log(
+        `Reserva de prueba: ${sala.nombre} ${r.fecha} ${r.hora} (${r.estado}).`,
+      );
+    }
+
+    reservasHoyCreadas.push({ ...r, id: reserva.id, salaNombre: sala.nombre });
+  }
+
+  console.log("Creando avisos de prueba para el reloj...");
+  const resumen = (r: (typeof reservasHoyCreadas)[number]) =>
+    `${r.salaNombre} · ${fechaCorta(r.fecha)} · ${r.hora} (${r.duracionHoras} h)`;
+  const datosReserva = (r: (typeof reservasHoyCreadas)[number]) => ({
+    reservaId: r.id,
+    salaId: r.salaId,
+    salaNombre: r.salaNombre,
+    fecha: r.fecha,
+    hora: r.hora,
+    duracionHoras: r.duracionHoras,
+  });
+
+  const [rA, rB, rC] = reservasHoyCreadas;
+  const avisosIniciales = [
+    {
+      tipo: "reserva_confirmada" as const,
+      titulo: "Reserva confirmada",
+      cuerpo: resumen(rA),
+      datos: datosReserva(rA),
+      hace: 35,
+    },
+    {
+      tipo: "reserva_confirmada" as const,
+      titulo: "Reserva confirmada",
+      cuerpo: resumen(rB),
+      datos: datosReserva(rB),
+      hace: 25,
+    },
+    {
+      tipo: "reserva_cancelada" as const,
+      titulo: "Reserva cancelada",
+      cuerpo: `${resumen(rC)}. Contáctanos si tienes dudas.`,
+      datos: { ...datosReserva(rC), canceladaPor: "staff" },
+      hace: 15,
+    },
+    {
+      tipo: "cambio_sala_favorita" as const,
+      titulo: "Cambio en tu sala favorita",
+      cuerpo: "Sala B: Nuevo equipo: Teclado Nord Stage 3",
+      datos: {
+        salaId: "B",
+        salaNombre: "Sala B",
+        cambios: ["Nuevo equipo: Teclado Nord Stage 3"],
+      },
+      hace: 5,
+    },
+  ];
+
+  for (const a of avisosIniciales) {
+    const yaExiste = await prisma.notificacion.findFirst({
+      where: { usuarioId: laura.id, titulo: a.titulo, cuerpo: a.cuerpo },
+    });
+    if (yaExiste) {
+      console.log(`Aviso "${a.titulo}" (${a.cuerpo}) ya existe, se omite.`);
+      continue;
+    }
+
+    await prisma.notificacion.create({
+      data: {
+        usuarioId: laura.id,
+        tipo: a.tipo,
+        titulo: a.titulo,
+        cuerpo: a.cuerpo,
+        datos: a.datos as Prisma.InputJsonValue,
+        creadoEn: haceMinutos(a.hace),
+      },
+    });
+    console.log(`Aviso creado: ${a.titulo} -> ${a.cuerpo}.`);
   }
 
   console.log("Creando favoritos de ejemplo...");
