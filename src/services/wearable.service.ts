@@ -271,7 +271,9 @@ export async function proximasReservas(usuarioId: number, limite = 10) {
     where: {
       usuarioId,
       estado: { in: ["pendiente", "confirmada"] },
-      fecha: { gte: fechaLocal(ahora) },
+      // Desde AYER: una reserva que empezó ayer en la noche puede seguir en curso después de
+      // medianoche (por ejemplo 23:00 + 2 h). Las que ya terminaron se descartan abajo por "fin".
+      fecha: { gte: fechaLocal(new Date(ahora.getTime() - 24 * 60 * 60 * 1000)) },
     },
     include: { sala: { select: { nombre: true } } },
     orderBy: [{ fecha: "asc" }, { hora: "asc" }],

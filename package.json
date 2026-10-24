@@ -11,7 +11,10 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:studio": "prisma studio",
-    "search:reindex": "ts-node prisma/reindex.ts"
+    "search:reindex": "ts-node prisma/reindex.ts",
+    "test": "vitest run --config vitest.unit.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -42,11 +45,16 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^3.2.7",
     "prisma": "^7.9.1",
+    "supertest": "^7.3.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.23.9",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vitest": "^3.2.7"
   },
   "allowScripts": {
     "@firebase/util@1.15.3": true,

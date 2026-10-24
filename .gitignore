@@ -9,3 +9,8 @@ uploads/
 
 # Credenciales de Firebase (nunca se versionan)
 firebase-service-account*.json
+
+# Resultados de Playwright
+tests/e2e/resultados/
+coverage/
+tests/e2e/capturas/
