@@ -48,7 +48,7 @@ export const uploadImagenSala = multer({
 export async function guardarImagenSala(file: Express.Multer.File): Promise<string> {
   const archivo = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${MIME_A_EXTENSION[file.mimetype] ?? ""}`;
   await prisma.imagenSala.create({
-    data: { id: archivo, mime: file.mimetype, datos: file.buffer, tamano: file.size },
+    data: { id: archivo, mime: file.mimetype, datos: new Uint8Array(file.buffer), tamano: file.size },
   });
   return `${PREFIJO_SALAS}${archivo}`;
 }
