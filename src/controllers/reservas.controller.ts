@@ -13,8 +13,15 @@ export const listarTodas = asyncHandler(async (_req: Request, res: Response) => 
   res.status(200).json({ ok: true, reservas });
 });
 
+const ROLES_STAFF = ["Administrador", "Editor"];
+
 export const obtenerPorId = asyncHandler(async (req: Request, res: Response) => {
-  const reserva = await reservasService.getReservaById(req.params.id);
+  // El staff puede ver cualquier reserva; un Usuario solo las suyas.
+  const esStaff = req.usuario!.roles.some((r) => ROLES_STAFF.includes(r));
+  const reserva = await reservasService.getReservaById(
+    req.params.id,
+    esStaff ? undefined : req.usuario!.id,
+  );
   res.status(200).json({ ok: true, reserva });
 });
 

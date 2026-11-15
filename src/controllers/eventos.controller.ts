@@ -48,3 +48,23 @@ export const obtenerPorTipo = asyncHandler(
     res.status(200).json({ ok: true, evento });
   },
 );
+
+/** POST /api/eventos/fijar { tipo } — tipo = null (o vacío) quita el evento fijado. */
+export const fijar = asyncHandler(async (req: Request, res: Response) => {
+  const tipo = req.body?.tipo ?? null;
+
+  if (tipo !== null && tipo !== "" && !eventosService.tiposValidos().includes(tipo)) {
+    throw ApiError.badRequest(
+      `El tipo de evento '${tipo}' no existe. Tipos válidos: ${eventosService
+        .tiposValidos()
+        .join(", ")}`,
+    );
+  }
+
+  eventosService.setEventoFijado(tipo || null);
+  res.status(200).json({
+    ok: true,
+    mensaje: tipo ? "Evento fijado globalmente" : "Evento fijado eliminado",
+    evento: eventosService.obtenerEventoActivo(),
+  });
+});

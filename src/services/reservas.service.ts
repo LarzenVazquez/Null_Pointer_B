@@ -1,17 +1,42 @@
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
+import { CATALOGO_SERVICIOS, ServicioId } from "../config/servicios.catalogo";
+import { inicioDeReserva } from "../utils/fechas.utils";
 import {
   enSegundoPlano,
   notificarReservaCancelada,
   notificarReservaConfirmada,
 } from "./notificaciones.service";
 
-export interface ServicioSeleccionadoInput {
-  servicioId: string;
+/** Lo único que decide el cliente: qué servicio y cuántas unidades. */
+export interface ServicioSolicitadoInput {
+  servicioId: ServicioId;
+  cantidad: number;
+}
+
+/** Lo que se guarda en la reserva, con nombre y precios tomados del catálogo. */
+interface ServicioCobrado {
+  servicioId: ServicioId;
   nombre: string;
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
+}
+
+function cotizarServicios(solicitados: ServicioSolicitadoInput[]): ServicioCobrado[] {
+  return solicitados.map(({ servicioId, cantidad }) => {
+    const servicio = CATALOGO_SERVICIOS[servicioId];
+    if (!servicio) throw ApiError.badRequest(`El servicio '${servicioId}' no existe.`);
+    // Los servicios que no se cobran por cantidad (p. ej. grabación) cuentan una sola vez.
+    const unidades = servicio.requiereCantidad ? cantidad : 1;
+    return {
+      servicioId,
+      nombre: servicio.nombre,
+      cantidad: unidades,
+      precioUnitario: servicio.precio,
+      subtotal: servicio.precio * unidades,
+    };
+  });
 }
 
 export interface NuevaReservaInput {
@@ -20,7 +45,7 @@ export interface NuevaReservaInput {
   fecha: string;
   hora: string;
   duracionHoras: number;
-  servicios: ServicioSeleccionadoInput[];
+  servicios: ServicioSolicitadoInput[];
   notas?: string;
 }
 
@@ -101,12 +126,16 @@ export async function getAllReservas() {
   return reservas.map(serializar);
 }
 
-export async function getReservaById(id: string) {
+/**
+ * @param soloDeUsuarioId si se indica, la reserva debe pertenecer a ese Usuario.
+ *        Si es de otra persona se responde 404 (no 403) para no revelar que existe.
+ */
+export async function getReservaById(id: string, soloDeUsuarioId?: number) {
   const reserva = await prisma.reserva.findUnique({
     where: { id },
     include: includeSala,
   });
-  if (!reserva)
+  if (!reserva || (soloDeUsuarioId !== undefined && reserva.usuarioId !== soloDeUsuarioId))
     throw ApiError.noEncontrado(`No existe una reserva con id '${id}'`);
   return serializar(reserva);
 }
@@ -124,11 +153,10 @@ export async function crearReserva(input: NuevaReservaInput) {
     duracionHoras: input.duracionHoras,
   });
 
+  // Todos los precios se calculan aquí; lo que haya mandado el cliente no cuenta.
   const precioSala = sala.precio * input.duracionHoras;
-  const precioServicios = input.servicios.reduce(
-    (sum, s) => sum + s.subtotal,
-    0,
-  );
+  const servicios = cotizarServicios(input.servicios);
+  const precioServicios = servicios.reduce((sum, s) => sum + s.subtotal, 0);
 
   try {
     const reserva = await prisma.reserva.create({
@@ -139,7 +167,7 @@ export async function crearReserva(input: NuevaReservaInput) {
         hora: input.hora,
         duracionHoras: input.duracionHoras,
         precioSala,
-        servicios: input.servicios as any,
+        servicios: servicios as any,
         precioServicios,
         precioTotal: precioSala + precioServicios,
         estado: "confirmada",
@@ -204,6 +232,19 @@ export async function cancelarReserva(id: string, usuarioId?: number) {
 
   if (usuarioId !== undefined && existente.usuarioId !== usuarioId) {
     throw ApiError.prohibido("No puedes cancelar una reserva que no es tuya.");
+  }
+
+  if (existente.estado === "completada") {
+    throw ApiError.conflicto("Esta reserva ya se completó y no se puede cancelar.");
+  }
+
+  // El Usuario no puede cancelar un ensayo que ya empezó; un Administrador sí (p. ej. una falla en la sala).
+  if (
+    usuarioId !== undefined &&
+    existente.estado !== "cancelada" &&
+    inicioDeReserva(existente.fecha, existente.hora) <= new Date()
+  ) {
+    throw ApiError.conflicto("Tu ensayo ya empezó; para cancelarlo contacta al estudio.");
   }
 
   const yaEstabaCancelada = existente.estado === "cancelada";
