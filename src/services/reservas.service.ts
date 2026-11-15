@@ -1,7 +1,8 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { CATALOGO_SERVICIOS, ServicioId } from "../config/servicios.catalogo";
-import { inicioDeReserva } from "../utils/fechas.utils";
+import { fechaLocal, inicioDeReserva } from "../utils/fechas.utils";
 import {
   enSegundoPlano,
   notificarReservaCancelada,
@@ -70,43 +71,58 @@ function serializar(reserva: any) {
 
 const includeSala = { sala: true } as const;
 
-function horaAMinutos(hora: string): number {
-  const [h, m] = hora.split(":").map(Number);
-  return (h || 0) * 60 + (m || 0);
-}
-async function asegurarSinSolapamiento(params: {
-  salaId: string;
-  fecha: string;
-  hora: string;
-  duracionHoras: number;
-  excluirReservaId?: string;
-}) {
-  const inicioNueva = horaAMinutos(params.hora);
-  const finNueva = inicioNueva + params.duracionHoras * 60;
+const HORA_MS = 60 * 60 * 1000;
+const DIA_MS = 24 * HORA_MS;
+/** Hasta cuántos días hacia adelante se puede reservar. */
+const MAX_DIAS_ANTICIPACION = 180;
 
-  const reservasDelDia = await prisma.reserva.findMany({
+const MENSAJE_TRASLAPE = "Esa sala ya está reservada en ese horario. Elige otra hora o sala.";
+
+/**
+ * Bloquea la sala durante la transacción para que dos reservas simultáneas no pasen
+ * la revisión de traslape al mismo tiempo. El candado se libera solo al terminar la transacción.
+ */
+async function bloquearSala(tx: Prisma.TransactionClient, salaId: string) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"reserva-sala:" + salaId}))`;
+}
+
+/**
+ * Revisa traslapes con instantes reales (no solo minutos del día), así detecta también
+ * reservas que cruzan la medianoche (p. ej. 22:00 + 3 h contra una de 00:00 del día siguiente).
+ */
+async function asegurarSinSolapamiento(
+  tx: Prisma.TransactionClient,
+  params: {
+    salaId: string;
+    fecha: string;
+    hora: string;
+    duracionHoras: number;
+    excluirReservaId?: string;
+  },
+) {
+  const inicioNueva = inicioDeReserva(params.fecha, params.hora).getTime();
+  const finNueva = inicioNueva + params.duracionHoras * HORA_MS;
+
+  // Una reserva dura máximo 12 h, así que basta con mirar el día anterior, el mismo y el siguiente.
+  const fechas = [-1, 0, 1].map((d) => fechaLocal(new Date(inicioNueva + d * DIA_MS)));
+
+  const cercanas = await tx.reserva.findMany({
     where: {
       salaId: params.salaId,
-      fecha: params.fecha,
+      fecha: { in: fechas },
       estado: { not: "cancelada" },
-      ...(params.excluirReservaId
-        ? { id: { not: params.excluirReservaId } }
-        : {}),
+      ...(params.excluirReservaId ? { id: { not: params.excluirReservaId } } : {}),
     },
-    select: { hora: true, duracionHoras: true },
+    select: { fecha: true, hora: true, duracionHoras: true },
   });
 
-  const hayTraslape = reservasDelDia.some((r) => {
-    const inicioExistente = horaAMinutos(r.hora);
-    const finExistente = inicioExistente + r.duracionHoras * 60;
-    return inicioNueva < finExistente && finNueva > inicioExistente;
+  const hayTraslape = cercanas.some((r) => {
+    const inicio = inicioDeReserva(r.fecha, r.hora).getTime();
+    const fin = inicio + r.duracionHoras * HORA_MS;
+    return inicioNueva < fin && finNueva > inicio;
   });
 
-  if (hayTraslape) {
-    throw ApiError.conflicto(
-      "Esa sala ya está reservada en ese horario. Elige otra hora o sala.",
-    );
-  }
+  if (hayTraslape) throw ApiError.conflicto(MENSAJE_TRASLAPE);
 }
 
 export async function getReservasDeUsuario(usuarioId: number) {
@@ -146,12 +162,16 @@ export async function crearReserva(input: NuevaReservaInput) {
     throw ApiError.badRequest("La sala seleccionada ya no está disponible.");
   }
 
-  await asegurarSinSolapamiento({
-    salaId: sala.id,
-    fecha: input.fecha,
-    hora: input.hora,
-    duracionHoras: input.duracionHoras,
-  });
+  const inicio = inicioDeReserva(input.fecha, input.hora).getTime();
+  const ahora = Date.now();
+  if (inicio <= ahora) {
+    throw ApiError.badRequest("Ese horario ya pasó. Elige una fecha y hora futuras.");
+  }
+  if (inicio > ahora + MAX_DIAS_ANTICIPACION * DIA_MS) {
+    throw ApiError.badRequest(
+      `Solo se puede reservar con hasta ${MAX_DIAS_ANTICIPACION} días de anticipación.`,
+    );
+  }
 
   // Todos los precios se calculan aquí; lo que haya mandado el cliente no cuenta.
   const precioSala = sala.precio * input.duracionHoras;
@@ -159,21 +179,30 @@ export async function crearReserva(input: NuevaReservaInput) {
   const precioServicios = servicios.reduce((sum, s) => sum + s.subtotal, 0);
 
   try {
-    const reserva = await prisma.reserva.create({
-      data: {
-        usuarioId: input.usuarioId,
+    const reserva = await prisma.$transaction(async (tx) => {
+      await bloquearSala(tx, sala.id);
+      await asegurarSinSolapamiento(tx, {
         salaId: sala.id,
         fecha: input.fecha,
         hora: input.hora,
         duracionHoras: input.duracionHoras,
-        precioSala,
-        servicios: servicios as any,
-        precioServicios,
-        precioTotal: precioSala + precioServicios,
-        estado: "confirmada",
-        notas: input.notas,
-      },
-      include: includeSala,
+      });
+      return tx.reserva.create({
+        data: {
+          usuarioId: input.usuarioId,
+          salaId: sala.id,
+          fecha: input.fecha,
+          hora: input.hora,
+          duracionHoras: input.duracionHoras,
+          precioSala,
+          servicios: servicios as any,
+          precioServicios,
+          precioTotal: precioSala + precioServicios,
+          estado: "confirmada",
+          notas: input.notas,
+        },
+        include: includeSala,
+      });
     });
 
     const serializada = serializar(reserva);
@@ -181,11 +210,7 @@ export async function crearReserva(input: NuevaReservaInput) {
     enSegundoPlano(notificarReservaConfirmada(serializada), "reserva creada");
     return serializada;
   } catch (err: any) {
-    if (err?.code === "P2002") {
-      throw ApiError.conflicto(
-        "Esa sala ya está reservada en ese horario. Elige otra hora o sala.",
-      );
-    }
+    if (err?.code === "P2002") throw ApiError.conflicto(MENSAJE_TRASLAPE);
     throw err;
   }
 }
@@ -195,17 +220,34 @@ export async function actualizarEstado(
   estado: "pendiente" | "confirmada" | "completada" | "cancelada",
 ) {
   const anterior = await getReservaById(id);
+  const reactivando = anterior.estado === "cancelada" && estado !== "cancelada";
 
-  const reserva = await prisma.reserva.update({
-    where: { id },
-    data: {
-      estado,
-      // Si vuelve a confirmarse, se permite un nuevo recordatorio.
-      ...(estado === "confirmada" && anterior.estado !== "confirmada"
-        ? { recordatorioEnviado: false }
-        : {}),
-    },
-    include: includeSala,
+  const reserva = await prisma.$transaction(async (tx) => {
+    // Reactivar una reserva cancelada podría chocar con otra que ocupó ese horario.
+    if (reactivando) {
+      await bloquearSala(tx, anterior.salaId);
+      await asegurarSinSolapamiento(tx, {
+        salaId: anterior.salaId,
+        fecha: anterior.fecha,
+        hora: anterior.hora,
+        duracionHoras: anterior.duracionHoras,
+        excluirReservaId: id,
+      });
+    }
+    return tx.reserva.update({
+      where: { id },
+      data: {
+        estado,
+        // Si vuelve a confirmarse, se permite un nuevo recordatorio.
+        ...(estado === "confirmada" && anterior.estado !== "confirmada"
+          ? { recordatorioEnviado: false }
+          : {}),
+      },
+      include: includeSala,
+    });
+  }).catch((err: any) => {
+    if (err?.code === "P2002") throw ApiError.conflicto(MENSAJE_TRASLAPE);
+    throw err;
   });
 
   const serializada = serializar(reserva);

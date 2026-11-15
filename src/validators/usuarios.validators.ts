@@ -28,3 +28,10 @@ export const crearUsuarioAdminSchema = z.object({
     .optional()
     .default("Usuario"),
 });
+
+export const cambiarEstadoSchema = z.object({
+  activo: z.boolean({
+    required_error: "Falta el campo 'activo'",
+    invalid_type_error: "'activo' debe ser true o false",
+  }),
+});

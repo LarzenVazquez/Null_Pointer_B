@@ -121,17 +121,19 @@ export async function cambiarRolUsuario(
   return usuarioSerializado;
 }
 
-export async function cambiarEstadoUsuario(
-  id: number,
-  activo: boolean | number,
-) {
+export async function cambiarEstadoUsuario(id: number, activo: boolean) {
   await asegurarExiste(id);
 
   const usuario = await prisma.usuario.update({
     where: { id },
-    data: { activo: Boolean(activo) },
+    data: { activo },
     include: includeRoles,
   });
+
+  // Al dar de baja, se cierran sus sesiones: ya no podrá renovar el token.
+  if (!activo) {
+    await prisma.sesion.updateMany({ where: { usuarioId: id, valida: true }, data: { valida: false } });
+  }
 
   const usuarioSerializado = serializar(usuario);
   await indexUsuario(usuarioSerializado);

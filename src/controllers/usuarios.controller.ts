@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError";
 import * as usuariosService from "../services/usuarios.service";
 
 export const listar = asyncHandler(async (_req: Request, res: Response) => {
@@ -39,7 +40,12 @@ export const cambiarRol = asyncHandler(async (req: Request, res: Response) => {
 export const cambiarEstado = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params as unknown as { id: number };
-    const { activo } = req.body;
+    const { activo } = req.body as { activo: boolean };
+
+    // Evita que un Administrador se dé de baja a sí mismo y se quede sin acceso.
+    if (!activo && req.usuario?.id === id) {
+      throw ApiError.badRequest("No puedes darte de baja a ti mismo.");
+    }
 
     const usuario = await usuariosService.cambiarEstadoUsuario(id, activo);
 

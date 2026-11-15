@@ -5,6 +5,7 @@ import { requirePermission, requireRole } from "../middlewares/rbac.middleware";
 import { validate } from "../middlewares/validate.middleware";
 import {
   actualizarUsuarioSchema,
+  cambiarEstadoSchema,
   cambiarRolSchema,
   crearUsuarioAdminSchema,
   idParamSchema,
@@ -57,6 +58,7 @@ router.patch(
   "/:id/estado",
   validate(idParamSchema, "params"),
   requireRole("Administrador"),
+  validate(cambiarEstadoSchema),
   usuariosController.cambiarEstado,
 );
 
