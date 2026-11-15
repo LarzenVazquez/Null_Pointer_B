@@ -3,11 +3,15 @@ import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
 import { asegurarIndices } from "./lib/elasticsearch";
 import { obtenerMessaging } from "./lib/firebase";
+import { cargarEventoFijado } from "./services/eventos.service";
 import { detenerRecordatorios, iniciarRecordatorios } from "./jobs/recordatorios.job";
 
 async function main() {
   await prisma.$connect();
   console.log("[db] Conexión a PostgreSQL establecida");
+  await cargarEventoFijado().catch((err) =>
+    console.warn("[eventos] No se pudo cargar el evento fijado; se usará el del calendario.", err),
+  );
   try {
     await asegurarIndices();
     console.log("[search] Índices de Elasticsearch listos");

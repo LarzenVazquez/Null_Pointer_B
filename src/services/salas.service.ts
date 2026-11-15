@@ -1,6 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
-import { eliminarArchivoDeImagen } from "../middlewares/upload.middleware";
+import {
+  eliminarArchivoDeImagen,
+  urlPublicaImagen,
+  urlRelativaImagen,
+} from "../middlewares/upload.middleware";
 import {
   enSegundoPlano,
   notificarCambioSalaFavorita,
@@ -22,7 +26,7 @@ function serializar(sala: any) {
     featured: sala.featured,
     descripcion: sala.descripcion,
     equipo: sala.equipo,
-    imagenUrl: sala.imagenUrl ?? null,
+    imagenUrl: urlPublicaImagen(sala.imagenUrl),
   };
 }
 
@@ -86,7 +90,7 @@ export async function crearSala(
       featured: datos.featured ?? false,
       descripcion: datos.descripcion,
       equipo: datos.equipo,
-      imagenUrl: imagenSubidaUrl ?? datos.imagenUrl ?? null,
+      imagenUrl: imagenSubidaUrl ?? urlRelativaImagen(datos.imagenUrl) ?? null,
     },
   });
 
@@ -101,10 +105,6 @@ export async function actualizarSala(
   const salaActual = await prisma.sala.findUnique({ where: { id } });
   if (!salaActual)
     throw ApiError.noEncontrado(`No existe una sala con id '${id}'`);
-
-  if (imagenSubidaUrl && salaActual.imagenUrl) {
-    eliminarArchivoDeImagen(salaActual.imagenUrl);
-  }
 
   const sala = await prisma.sala.update({
     where: { id },
@@ -127,10 +127,15 @@ export async function actualizarSala(
       ...(imagenSubidaUrl
         ? { imagenUrl: imagenSubidaUrl }
         : cambios.imagenUrl !== undefined
-          ? { imagenUrl: cambios.imagenUrl || null }
+          ? { imagenUrl: urlRelativaImagen(cambios.imagenUrl) || null }
           : {}),
     },
   });
+
+  // Si la imagen cambió (nueva subida, otra URL o se quitó), se borra la anterior.
+  if (salaActual.imagenUrl && salaActual.imagenUrl !== sala.imagenUrl) {
+    eliminarArchivoDeImagen(salaActual.imagenUrl);
+  }
 
   // Wear: avisar a quienes tienen esta sala en favoritos si cambió algo relevante.
   const cambiosRelevantes = describirCambios(salaActual, sala);

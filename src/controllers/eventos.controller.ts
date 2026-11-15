@@ -61,7 +61,7 @@ export const fijar = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
-  eventosService.setEventoFijado(tipo || null);
+  await eventosService.setEventoFijado(tipo || null);
   res.status(200).json({
     ok: true,
     mensaje: tipo ? "Evento fijado globalmente" : "Evento fijado eliminado",

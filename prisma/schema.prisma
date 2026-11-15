@@ -247,3 +247,24 @@ model Notificacion {
   @@index([usuarioId, creadoEn])
   @@map("notificaciones")
 }
+
+/// Imágenes de salas guardadas en la base (el disco de Render se borra en cada deploy).
+/// `id` es el nombre de archivo que aparece en la URL: /uploads/salas/<id>
+model ImagenSala {
+  id        String   @id
+  mime      String
+  datos     Bytes
+  tamano    Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("imagenes_salas")
+}
+
+/// Ajustes globales clave-valor que deben sobrevivir a reinicios (p. ej. el evento fijado).
+model Configuracion {
+  clave     String   @id
+  valor     String?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("configuracion")
+}

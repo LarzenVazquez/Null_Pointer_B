@@ -1,3 +1,5 @@
+import { prisma } from "../lib/prisma";
+
 export type EventoTipo =
   | "default"
   | "navidad"
@@ -122,9 +124,24 @@ const EVENTOS: Record<EventoTipo, EventoCalendario> = {
   },
 };
 
+// El evento fijado se guarda en la tabla `configuracion` para que sobreviva a reinicios de Render.
+// En memoria queda una copia para responder rápido (hay una sola instancia del backend).
+const CLAVE_EVENTO_FIJADO = "evento_fijado";
 let eventoFijadoGlobal: EventoTipo | null = null;
 
-export function setEventoFijado(tipo: EventoTipo | null): void {
+/** Se llama al arrancar el servidor. */
+export async function cargarEventoFijado(): Promise<void> {
+  const fila = await prisma.configuracion.findUnique({ where: { clave: CLAVE_EVENTO_FIJADO } });
+  const tipo = fila?.valor as EventoTipo | null | undefined;
+  eventoFijadoGlobal = tipo && tiposValidos().includes(tipo) ? tipo : null;
+}
+
+export async function setEventoFijado(tipo: EventoTipo | null): Promise<void> {
+  await prisma.configuracion.upsert({
+    where: { clave: CLAVE_EVENTO_FIJADO },
+    create: { clave: CLAVE_EVENTO_FIJADO, valor: tipo },
+    update: { valor: tipo },
+  });
   eventoFijadoGlobal = tipo;
 }
 
